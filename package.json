@@ -1,11 +1,11 @@
 {
-  "name": "green-house",
+  "name": "amanda-walk",
   "version": "2.0.2",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start -p 1200",
+    "start": "next start -p 1207",
     "lint": "next lint",
     "seed": "tsx prisma/seed.ts"
   },
