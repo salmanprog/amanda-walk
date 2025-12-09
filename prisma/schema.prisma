@@ -1,0 +1,261 @@
+// ---------- GENERATOR & DATASOURCE ----------
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- MODELS ----------
+model UserRole {
+  id           Int       @id @default(autoincrement())
+  title        String    @unique @db.VarChar(100)
+  slug         String    @unique @db.VarChar(100)
+  description  String?   @db.VarChar(255)
+  type         RoleType  @default(USER)
+  isSuperAdmin Boolean   @default(false)
+  status       Boolean   @default(true)
+  createdAt    DateTime? @db.Timestamp(6)
+  updatedAt    DateTime? @db.Timestamp(6)
+  deletedAt    DateTime? @db.Timestamp(6)
+
+  users User[]
+  modulePermissions CmsModulePermission[]
+
+  @@map("user_role")
+}
+
+enum RoleType {
+  SUPER_ADMIN
+  ADMIN
+  CLIENT
+  USER
+}
+
+model UserApiToken {
+  id            Int       @id @default(autoincrement())
+  userId        Int
+  api_token     String
+  device_type   String?
+  device_token  String?
+  platform_type String?
+  platform_id   String?
+  ip_address    String?
+  user_agent    String?
+  created_at    DateTime? @default(now())
+  updated_at    DateTime? @updatedAt
+  deleted_at    DateTime?
+
+  // Relation to User
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model UserAddress {
+  id           Int       @id @default(autoincrement())
+  userId       Int
+  addressLine1 String    @db.VarChar(255)
+  addressLine2 String?   @db.VarChar(255)
+  city         String    @db.VarChar(150)
+  state        String?   @db.VarChar(150)
+  country      String    @db.VarChar(150)
+  postalCode   String?   @db.VarChar(50)
+  isDefault    Boolean   @default(false)
+  createdAt    DateTime  @default(now()) @db.Timestamp(6)
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime? @db.Timestamp(6)
+
+  // Relation to User
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("user_address")
+}
+
+model User {
+  id                Int         @id @default(autoincrement())
+  userGroupId       Int?
+  createdBy         Int         @default(0)
+  userType          UserType    @default(USER)
+  name              String?     @db.VarChar(255)
+  lname              String?     @db.VarChar(255)
+  username          String      @unique @default("temp_username") @db.VarChar(150)
+  slug              String      @unique @default("temp_slug") @db.VarChar(150)
+  email             String?     @unique @db.VarChar(150)
+  mobileNumber      String?     @unique @db.VarChar(150)
+  dob               String?     @db.VarChar(250)
+  age               Int         @default(0)
+  gender            Gender      @default(MALE)
+  profileType       ProfileType @default(PUBLIC)
+  password          String      @db.VarChar(255)
+  imageUrl          String?     @db.Text
+  status            Boolean     @default(true)
+  isEmailVerify     Boolean     @default(false)
+  emailVerifyAt     DateTime?
+  platformType      String      @default("custom")
+  platformId        String?
+  emailOtp          String?     @db.VarChar(100)
+  emailOtpCreatedAt DateTime?
+  createdAt         DateTime?   @db.Timestamp(6)
+  updatedAt         DateTime?   @db.Timestamp(6)
+  deletedAt         DateTime?   @db.Timestamp(6)
+
+  // ✅ Relation to UserRole
+  userRole UserRole? @relation(fields: [userGroupId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  // ✅ Add this new relation 👇
+  apiTokens UserApiToken[]
+  addresses UserAddress[]
+  services Services[]
+
+  @@index([name])
+}
+
+model Blog {
+  id            Int       @id @default(autoincrement())
+  title         String    @db.VarChar(255)
+  slug          String    @unique @db.VarChar(255)
+  description   String?   @db.Text
+  imageUrl      String?   @db.Text
+  seoTitle      String?   @db.VarChar(255)
+  seoDescription String?  @db.Text
+  status        Boolean   @default(true)
+  createdAt     DateTime  @default(now()) @db.Timestamp(6)
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime? @db.Timestamp(6)
+
+  @@index([title])
+  @@map("blog")
+}
+
+model Media {
+  id          Int       @id @default(autoincrement())
+  title       String?   @db.VarChar(255)
+  url         String    @db.Text
+  type        MediaType @default(IMAGE)
+  relatedType String?   @db.VarChar(100) // e.g., "Event", "User"
+  relatedId   Int?      // the ID of the related entity
+  status      Boolean   @default(true)
+  createdAt   DateTime  @default(now()) @db.Timestamp(6)
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime? @db.Timestamp(6)
+
+  @@index([relatedType, relatedId])
+  @@map("media")
+}
+
+model CmModule {
+  id         Int       @id @default(autoincrement())
+  parentId   Int?      @map("parent_id")
+  name       String    @db.VarChar(255)
+  routeName  String?   @map("route_name") @db.VarChar(255)
+  icon       String?   @db.VarChar(255)
+  status     Boolean   @default(true)
+  sortOrder  Int?      @default(0) @map("sort_order")
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+  deletedAt  DateTime? @map("deleted_at") @db.Timestamp(6)
+
+  // Self-referential relation for parent-child hierarchy
+  parent   CmModule?  @relation("ModuleHierarchy", fields: [parentId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  children CmModule[] @relation("ModuleHierarchy")
+  
+  // Relation to module permissions
+  modulePermissions CmsModulePermission[]
+
+  @@index([parentId])
+  @@index([status])
+  @@map("cm_modules")
+}
+
+model CmsModulePermission {
+  id           Int      @id @default(autoincrement())
+  userRoleId   Int      @map("user_role_id")
+  cmsModuleId  Int      @map("cms_module_id")
+  isAdd        Boolean  @default(false) @map("is_add")
+  isView       Boolean  @default(false) @map("is_view")
+  isUpdate     Boolean  @default(false) @map("is_update")
+  isDelete     Boolean  @default(false) @map("is_delete")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at") @db.Timestamp(6)
+
+  // Relations
+  userRole  UserRole @relation(fields: [userRoleId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  cmsModule CmModule @relation(fields: [cmsModuleId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([userRoleId])
+  @@index([cmsModuleId])
+  @@unique([userRoleId, cmsModuleId])
+  @@map("cms_module_permissions")
+}
+
+model ServiceCategory {
+  id               Int       @id @default(autoincrement())
+  title            String    @db.VarChar(255)
+  slug             String    @unique @db.VarChar(255)
+  description      String?   @db.Text
+  imageUrl         String?   @db.VarChar(500)
+  seoTitle         String?   @db.VarChar(255)
+  seoDescription   String?   @db.Text
+  status           Boolean   @default(true)
+  createdAt        DateTime  @default(now()) @db.Timestamp(6)
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime? @db.Timestamp(6)
+
+  // One category has many services
+  services         Services[]
+
+  @@index([title])
+  @@map("services_categories")
+}
+
+model Services {
+  id                 Int       @id @default(autoincrement())
+  userId             Int
+  servicesCategoryId Int
+  title              String    @db.VarChar(255)
+  slug               String    @unique @db.VarChar(255)
+  description        String?   @db.Text
+  imageUrl           String?   @db.VarChar(500)
+  seoTitle           String?   @db.VarChar(255)
+  seoDescription     String?   @db.Text
+  status             Boolean   @default(true)
+  createdAt          DateTime  @default(now()) @db.Timestamp(6)
+  updatedAt          DateTime  @updatedAt
+  deletedAt          DateTime? @db.Timestamp(6)
+
+  // Relations
+  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category ServiceCategory  @relation(fields: [servicesCategoryId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([servicesCategoryId])
+  @@map("services")
+}
+
+
+enum MediaType {
+  IMAGE
+  VIDEO
+  DOCUMENT
+}
+
+// ---------- ENUMS ----------
+enum UserType {
+  SUPER_ADMIN
+  ADMIN
+  CLIENT
+  USER
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum ProfileType {
+  PUBLIC
+  PRIVATE
+}
