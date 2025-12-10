@@ -4,7 +4,7 @@ CREATE TABLE `user_role` (
     `title` VARCHAR(100) NOT NULL,
     `slug` VARCHAR(100) NOT NULL,
     `description` VARCHAR(255) NULL,
-    `type` ENUM('SUPER_ADMIN', 'ADMIN', 'CLIENT', 'USER') NOT NULL DEFAULT 'USER',
+    `type` ENUM('SUPER_ADMIN', 'ADMIN', 'EMPLOYEE', 'USER') NOT NULL DEFAULT 'USER',
     `isSuperAdmin` BOOLEAN NOT NULL DEFAULT false,
     `status` BOOLEAN NOT NULL DEFAULT true,
     `createdAt` TIMESTAMP(6) NULL,
@@ -50,6 +50,23 @@ CREATE TABLE `user_address` (
     `deletedAt` TIMESTAMP(6) NULL,
 
     INDEX `user_address_userId_idx`(`userId`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `employee_services` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `userId` INTEGER NOT NULL,
+    `serviceCategoryId` INTEGER NOT NULL,
+    `serviceId` INTEGER NOT NULL,
+    `serviceCategoryTitle` VARCHAR(150) NOT NULL,
+    `serviceTitle` VARCHAR(150) NULL,
+    `servicePrice` VARCHAR(150) NOT NULL,
+    `createdAt` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    `updatedAt` DATETIME(3) NOT NULL,
+    `deletedAt` TIMESTAMP(6) NULL,
+
+    INDEX `employee_services_userId_idx`(`userId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -209,6 +226,9 @@ ALTER TABLE `UserApiToken` ADD CONSTRAINT `UserApiToken_userId_fkey` FOREIGN KEY
 
 -- AddForeignKey
 ALTER TABLE `user_address` ADD CONSTRAINT `user_address_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `employee_services` ADD CONSTRAINT `employee_services_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `User` ADD CONSTRAINT `User_userGroupId_fkey` FOREIGN KEY (`userGroupId`) REFERENCES `user_role`(`id`) ON DELETE CASCADE ON UPDATE NO ACTION;

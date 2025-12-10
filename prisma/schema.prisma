@@ -30,7 +30,7 @@ model UserRole {
 enum RoleType {
   SUPER_ADMIN
   ADMIN
-  CLIENT
+  EMPLOYEE
   USER
 }
 
@@ -73,6 +73,25 @@ model UserAddress {
   @@map("user_address")
 }
 
+model EmployeeServices {
+  id           Int       @id @default(autoincrement())
+  userId       Int
+  serviceCategoryId Int
+  serviceId    Int
+  serviceCategoryTitle         String    @db.VarChar(150)
+  serviceTitle        String?   @db.VarChar(150)
+  servicePrice      String    @db.VarChar(150)
+  createdAt    DateTime  @default(now()) @db.Timestamp(6)
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime? @db.Timestamp(6)
+
+  // Relation to User
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("employee_services")
+}
+
 model User {
   id                Int         @id @default(autoincrement())
   userGroupId       Int?
@@ -108,6 +127,7 @@ model User {
   apiTokens UserApiToken[]
   addresses UserAddress[]
   services Services[]
+  employeeservices EmployeeServices[]
 
   @@index([name])
 }

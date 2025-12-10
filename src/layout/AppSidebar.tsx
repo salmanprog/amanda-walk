@@ -65,7 +65,7 @@ const navItems: NavItem[] = [
     icon: UserCircle,
     name: 'Employees',
     subItems: [
-      { name: 'All Employees', path: '#', pro: false },
+      { name: 'All Employees', path: '/admin/employee/', pro: false },
     ],
   },
   {

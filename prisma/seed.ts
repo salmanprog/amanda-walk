@@ -40,13 +40,13 @@ async function main() {
   });
 
   const clientRole = await prisma.userRole.upsert({
-    where: { slug: "client" },
+    where: { slug: "employee" },
     update: {},
     create: {
-      title: "Client",
-      slug: "client",
-      description: "Client access",
-      type: "CLIENT",
+      title: "Employee",
+      slug: "employee",
+      description: "Employee access",
+      type: "EMPLOYEE",
       isSuperAdmin: false,
       status: true,
     },
