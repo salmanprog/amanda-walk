@@ -16,6 +16,7 @@ const protectedApiRoutes = [
   { path: "/api/admin/service-category", methods: ["POST", "PATCH", "DELETE"] },
   { path: "/api/admin/service", methods: ["POST", "PATCH", "DELETE"] },
   { path: "/api/admin/employee", methods: ["POST", "GET", "PATCH", "DELETE"] },
+  { path: "/api/admin/employee-service", methods: ["POST", "GET", "PATCH", "DELETE"] },
   { path: "/api/admin/events", methods: ["POST", "GET", "PATCH", "DELETE"] },
   
 ];

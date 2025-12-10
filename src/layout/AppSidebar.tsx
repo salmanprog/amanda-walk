@@ -66,6 +66,7 @@ const navItems: NavItem[] = [
     name: 'Employees',
     subItems: [
       { name: 'All Employees', path: '/admin/employee/', pro: false },
+      { name: 'All Employee Services', path: '/admin/employee-services/', pro: false },
     ],
   },
   {

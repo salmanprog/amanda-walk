@@ -110,3 +110,13 @@ export const updateService = yup.object({
   seoTitle: yup.string().optional(),
   seoDescription: yup.string().optional(),
 });
+
+export const storeEmployeeService = yup.object({
+  serviceCategoryId: yup.string().required("Service category is required"),
+  serviceId: yup.string().required("Service is required"),
+});
+
+export const updateEmployeeService = yup.object({
+  serviceCategoryId: yup.string().required("Service category is required"),
+  serviceId: yup.string().required("Service is required"),
+});

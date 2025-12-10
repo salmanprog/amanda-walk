@@ -154,7 +154,7 @@ export default abstract class RestController<
     this.data = data;
     const validation = await this.validation("store");
     if (validation && "success" in validation && !validation.success)
-      return this.sendError("Validation failed", validation.errors ?? {}, 422);
+      return this.sendError("Validation failed", validation.errors ?? {}, 400);
 
     try {
         const beforeResponse = await this.beforeStore();
@@ -241,7 +241,7 @@ export default abstract class RestController<
     this.data = data;
     const validation = await this.validation("update");
     if (validation && "success" in validation && !validation.success)
-      return this.sendError("Validation failed", validation.errors ?? {}, 422);
+      return this.sendError("Validation failed", validation.errors ?? {}, 400);
 
     try {
       const beforeUpdate = await this.beforeUpdate();
@@ -271,7 +271,7 @@ export default abstract class RestController<
 
     const validation = await this.validation("update");
     if (validation && "success" in validation && !validation.success)
-      return this.sendError("Validation failed", validation.errors ?? {}, 422);
+      return this.sendError("Validation failed", validation.errors ?? {}, 400);
 
     try {
       const beforeUpdate = await this.beforeUpdate();

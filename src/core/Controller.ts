@@ -45,7 +45,7 @@ export default abstract class Controller {
           if (e.path) errors[e.path] = e.message;
         });
         this.__is_error = true;
-        return { success: false, errors, message: "Validation failed", status: 422 };
+        return { success: false, errors, message: "Validation failed", status: 400 };
       }
       this.__is_error = true;
       return { success: false, message: (err as Error).message, status: 500 };

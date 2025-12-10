@@ -56,6 +56,7 @@ CREATE TABLE `user_address` (
 -- CreateTable
 CREATE TABLE `employee_services` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `slug` VARCHAR(255) NOT NULL,
     `userId` INTEGER NOT NULL,
     `serviceCategoryId` INTEGER NOT NULL,
     `serviceId` INTEGER NOT NULL,
@@ -66,6 +67,7 @@ CREATE TABLE `employee_services` (
     `updatedAt` DATETIME(3) NOT NULL,
     `deletedAt` TIMESTAMP(6) NULL,
 
+    UNIQUE INDEX `employee_services_slug_key`(`slug`),
     INDEX `employee_services_userId_idx`(`userId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

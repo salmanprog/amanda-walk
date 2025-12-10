@@ -53,7 +53,7 @@ export default class AdminEmployeeController extends RestController<
     if (email) {
       const existing = await prisma.user.findUnique({ where: { email } });
       if (existing) {
-        return this.sendError("Validation failed", { email: "Email already exists" }, 422);
+        return this.sendError("Validation failed", { email: "Email already exists" }, 400);
       }
     }
 
@@ -65,6 +65,10 @@ export default class AdminEmployeeController extends RestController<
     if (typeof this.data?.password === "string") {
       const bcrypt = await import("bcryptjs");
       this.data.password = await bcrypt.hash(this.data.password, 10);
+    }
+
+    if (this.data?.status !== undefined) {
+      this.data.status = String(this.data.status) === "1";
     }
   }
 
@@ -87,7 +91,11 @@ export default class AdminEmployeeController extends RestController<
     
     const image = this.data?.image;
     if (image && !/\.(jpg|jpeg|png)$/i.test(image)) {
-      return this.sendError("Invalid image format", { image: "Only JPG/PNG allowed" }, 422);
+      return this.sendError("Invalid image format", { image: "Only JPG/PNG allowed" }, 400);
+    }
+
+    if (this.data?.status !== undefined) {
+      this.data.status = String(this.data.status) === "1";
     }
   }
 

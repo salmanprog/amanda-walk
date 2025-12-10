@@ -8,23 +8,20 @@ import useApi from "@/utils/useApi";
 import Badge from "@/components/ui/badge/Badge";
 import ActionMenu from "@/components/ui/dropdown/ActionMenu";
 
-interface Employee {
+interface EmployeeService {
   id: number;
-  name: string;
   slug: string;
-  email: string;
-  imageUrl: string | null;
-  role: {
-    id: number;
-    title: string;
-    slug: string;
-  } | null;
+  serviceCategoryId: number;
+  serviceCategoryTitle: string;
+  serviceId: number;
+  serviceTitle: string;
+  servicePrice: string;
 }
 
 export default function UserList() {
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const { data, loading, fetchApi } = useApi({
-    url: "/api/admin/employee",
+  const [employeeServices, setEmployeeServices] = useState<EmployeeService[]>([]);
+  const { data: employeeServicesData, loading, fetchApi } = useApi({
+    url: "/api/admin/employee-services",
     method: "GET",
     type: "manual",
     requiresAuth: true,
@@ -32,17 +29,17 @@ export default function UserList() {
 
   // Set page title
   useEffect(() => {
-    document.title = "Admin | Employees";
+    document.title = "Admin | Employee Services";
   }, []);
 
   useEffect(() => {
     fetchApi();
   }, []);
   useEffect(() => {
-    if (data && Array.isArray(data)) {
-      setEmployees(data);
+    if (employeeServicesData && Array.isArray(employeeServicesData)) {
+      setEmployeeServices(employeeServicesData);
     }
-  }, [data]);
+  }, [employeeServicesData]);
   
   return (
     <>
@@ -50,12 +47,12 @@ export default function UserList() {
       <div className="flex flex-col gap-2 mb-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
-            Employees List
+            Employee Services List
           </h3>
         </div>
         <div className="flex items-center gap-3">
-            <Link href="/admin/employee/add">
-              <Button>Add Employee</Button>
+            <Link href="/admin/employee-services/add">
+              <Button>Add Employee Service</Button>
             </Link>
         </div>
       </div>
@@ -74,19 +71,19 @@ export default function UserList() {
                 isHeader
                 className="py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
               >
-                Name
+                Service Category
               </TableCell>
               <TableCell
                 isHeader
                 className="py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
               >
-                Email
+                Service
               </TableCell>
               <TableCell
                 isHeader
                 className="py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
               >
-                Role
+                Price
               </TableCell>
               <TableCell
                 isHeader
@@ -103,43 +100,31 @@ export default function UserList() {
             {loading ? (
               <TableRow>
                 <TableCell className="py-8 text-center text-gray-500">
-                  Loading employees...
+                  Loading employee services...
                 </TableCell>
               </TableRow>
-              ) : employees.length > 0 ? (
-              employees.map((employee) => (
-                <TableRow key={employee.id} className="">
+              ) : employeeServices.length > 0 ? (
+              employeeServices.map((employeeService) => (
+                <TableRow key={employeeService.id} className="">
                   <TableCell className="py-3">
                     <div className="flex items-center gap-3">
-                      {employee.imageUrl ? (
-                        <div className="h-[50px] w-[50px] overflow-hidden rounded-md">
-                          <Image 
-                            src={employee.imageUrl} 
-                            alt={employee.name || "Employee"} 
-                            width={50} 
-                            height={50}
-                            className="object-cover"
-                          />
-                        </div>
-                      ) : (
-                        <div className="h-[50px] w-[50px] overflow-hidden rounded-md bg-gray-200 flex items-center justify-center">
-                          <span className="text-gray-500 text-sm">{employee.id}</span>
-                        </div>
-                      )}
+                      <div className="h-[50px] w-[50px] overflow-hidden rounded-md bg-gray-200 flex items-center justify-center">
+                        {employeeService.id}
+                      </div>
                     </div>
                   </TableCell>
                   <TableCell className="py-3 text-gray-500 text-theme-sm dark:text-gray-400">
-                    {employee.name || "N/A"}
+                    {employeeService.serviceCategoryTitle || "N/A"}
                   </TableCell>
                   <TableCell className="py-3 text-gray-500 text-theme-sm dark:text-gray-400">
-                    {employee.email || "N/A"}
+                    {employeeService.serviceTitle || "N/A"}
                   </TableCell>
                   <TableCell className="py-3 text-gray-500 text-theme-sm dark:text-gray-400">
-                    {employee.role?.title || "N/A"}
+                    {employeeService.servicePrice || "N/A"}
                   </TableCell>
                   <TableCell className="py-3 text-center">
                     <ActionMenu
-                      viewUrl={`/admin/employee/${employee.slug}`}
+                      viewUrl={`/admin/employee-services/${employeeService.slug}`}
                     />
                   </TableCell>
                 </TableRow>
@@ -147,7 +132,7 @@ export default function UserList() {
             ) : (
               <TableRow>
                 <TableCell className="py-8 text-center text-gray-500">
-                  No employees found.
+                  No employee services found.
                 </TableCell>
               </TableRow>
             )}
