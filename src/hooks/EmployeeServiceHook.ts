@@ -4,9 +4,9 @@ import { getHookUser } from "@/utils/hookUser";
 export default class EmployeeHook {
 
   static async indexQueryHook(  
-    query: Prisma.ServicesFindManyArgs,
+    query: Prisma.EmployeeServicesFindManyArgs,
     request?: Record<string, unknown>
-  ): Promise<Prisma.ServicesFindManyArgs> {
+  ): Promise<Prisma.EmployeeServicesFindManyArgs> {
     const user = getHookUser(request);
     query.include = {
       user: true,
@@ -18,20 +18,30 @@ export default class EmployeeHook {
     if (request && typeof request.q === "string") {
       query.where = {
         ...query.where,
-        title: {
+        serviceTitle: {
           contains: request.q,
           mode: "insensitive",
         } as Prisma.StringFilter,
       };
+    }
+    // Filter by CategoryId if provided in query parameters
+    if (request?.query && typeof request.query === 'object' && 'cat_id' in request.query) {    
+      const cat_id = request.query.cat_id;
+      if (cat_id) {
+        query.where = { 
+          ...query.where,     
+          serviceCategoryId: typeof cat_id === 'string' ? parseInt(cat_id, 10) : Number(cat_id)
+        };
+      }
     }
 
     return query;
   }
 
   static async showQueryHook(
-  query: Prisma.ServicesFindUniqueArgs,
+  query: Prisma.EmployeeServicesFindUniqueArgs,
   request?: Record<string, unknown>
-  ): Promise<Prisma.ServicesFindUniqueArgs> {
+  ): Promise<Prisma.EmployeeServicesFindUniqueArgs> {
     query.include = {
       user: true,
     };
@@ -41,9 +51,9 @@ export default class EmployeeHook {
   }
 
   static async beforeCreateHook(
-    data: Prisma.ServicesCreateInput,
+    data: Prisma.EmployeeServicesCreateInput,
     request?: Record<string, unknown>
-): Promise<Prisma.ServicesCreateInput> { 
+): Promise<Prisma.EmployeeServicesCreateInput> { 
     return data;
   }
 }

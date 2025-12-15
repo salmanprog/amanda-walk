@@ -13,6 +13,15 @@ export default class AdminServiceHook {
       category: true,
     };
     query.where = { ...query.where, deletedAt: null };
+    if (request?.query && typeof request.query === 'object' && 'cat_id' in request.query) {    
+      const cat_id = request.query.cat_id;
+      if (cat_id) {
+        query.where = { 
+          ...query.where,     
+          servicesCategoryId: typeof cat_id === 'string' ? parseInt(cat_id, 10) : Number(cat_id)
+        };
+      }
+    }
     query.orderBy = {
       createdAt: "desc",
     };

@@ -59,6 +59,12 @@ export default class AdminEmployeeServiceController extends RestController<
   // ---------------- BEFORE STORE ----------------
   protected async beforeStore(): Promise<void | NextResponse> {
     const current_user = this.requireUser();
+    if (this.data?.userId) {
+      const existing = await prisma.employeeServices.findFirst({ where: { userId: Number(this.data?.userId), serviceCategoryId: Number(this.data?.serviceCategoryId), serviceId: Number(this.data?.serviceId), deletedAt: null } });
+      if (existing) {
+        return this.sendError("Validation failed", { userId: "Employee already has a service" }, 400);
+      }
+    }
     if (this.data?.serviceCategoryId) {
       this.data.slug = await generateSlug("employeeServices" as any, String(this.data.serviceCategoryId));
     }
@@ -72,9 +78,9 @@ export default class AdminEmployeeServiceController extends RestController<
     }
 
     if (current_user?.id) {
-      this.data!.userId = current_user.id as number;
+      this.data!.userId = Number(this.data!.userId);
     }
-  }
+  } 
 
   // ---------------- BEFORE UPDATE ----------------
   protected async beforeUpdate(): Promise<void | NextResponse> {

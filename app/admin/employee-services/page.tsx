@@ -7,6 +7,8 @@ import Button from "@/components/ui/button/Button";
 import useApi from "@/utils/useApi";
 import Badge from "@/components/ui/badge/Badge";
 import ActionMenu from "@/components/ui/dropdown/ActionMenu";
+import { useModal } from "@/hooks/useModal";
+import { Modal } from "@/components/ui/modal";
 
 interface EmployeeService {
   id: number;
@@ -20,6 +22,8 @@ interface EmployeeService {
 
 export default function UserList() {
   const [employeeServices, setEmployeeServices] = useState<EmployeeService[]>([]);
+  const [deleteSlug, setDeleteSlug] = useState<string | null>(null);
+  const deleteModal = useModal();
   const { data: employeeServicesData, loading, fetchApi } = useApi({
     url: "/api/admin/employee-services",
     method: "GET",
@@ -40,9 +44,51 @@ export default function UserList() {
       setEmployeeServices(employeeServicesData);
     }
   }, [employeeServicesData]);
-  
+  const handleDelete = async () => {
+    if (!deleteSlug) return;
+
+    await fetch(`/api/admin/employee-services/${deleteSlug}`, {
+      method: "DELETE",
+    });
+
+    deleteModal.closeModal();
+    setDeleteSlug(null);
+    fetchApi(); // refresh table
+  };
   return (
     <>
+    {/* DELETE CONFIRMATION MODAL */}
+    <Modal
+        isOpen={deleteModal.isOpen}
+        onClose={deleteModal.closeModal}
+        className="max-w-[450px] p-6"
+      >
+        <div className="text-center">
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-3">
+            Confirm Delete
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            Are you sure you want to delete this service?  
+            <br />This action cannot be undone.
+          </p>
+
+          <div className="flex justify-center gap-3">
+            <button
+              onClick={deleteModal.closeModal}
+              className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+            >
+              Cancel
+            </button>
+
+            <button
+              onClick={handleDelete}
+              className="px-4 py-2 rounded-lg bg-error-500 text-white hover:bg-error-600"
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+      </Modal>
     <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white px-4 pb-3 pt-4 dark:border-gray-800 dark:bg-white/[0.03] sm:px-6">
       <div className="flex flex-col gap-2 mb-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -124,7 +170,11 @@ export default function UserList() {
                   </TableCell>
                   <TableCell className="py-3 text-center">
                     <ActionMenu
-                      viewUrl={`/admin/employee-services/${employeeService.slug}`}
+                      editUrl={`/admin/employee-services/edit/${employeeService.slug}`}
+                      onDelete={() => {
+                        setDeleteSlug(employeeService.slug);  
+                        deleteModal.openModal();
+                      }}
                     />
                   </TableCell>
                 </TableRow>

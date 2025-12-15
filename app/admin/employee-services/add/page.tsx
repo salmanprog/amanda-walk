@@ -13,7 +13,7 @@ export default function AddEmployee() {
   }, []);
 
   const [name, setName] = useState("");
-    const [email, setEmail] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [dob, setDob] = useState("");
   const [gender, setGender] = useState("");
@@ -22,35 +22,99 @@ export default function AddEmployee() {
   const [status, setStatus] = useState("1");
   const [errorMsg, setErrorMsg] = useState("");
 
-  // Submit Blog API
-  const { sendData, loading } = useApi({
-    url: "/api/admin/employee",
+  const [serviceCategoryId, setServiceCategoryId] = useState("");
+  const [services, setServices] = useState<any[]>([]);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState("");
+  const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
+  const [selectedServiceId, setSelectedServiceId] = useState("");
+  const [selectedService, setSelectedService] = useState<any>(null);
+
+  const [categoryTitle, setCategoryTitle] = useState("");
+  const [serviceTitle, setServiceTitle] = useState("");
+  const [servicePrice, setServicePrice] = useState("");
+
+  // Fetch Service Categories
+  const { data: serviceCategories, fetchApi: fetchServiceCategories } = useApi({
+    url: "/api/admin/service-category",
+    method: "GET",
     type: "manual",
     requiresAuth: true,
-  }); 
+  });
+
+  // Fetch Employees
+  const { data: employees, fetchApi: fetchEmployees } = useApi({
+    url: "/api/admin/employee",
+    method: "GET",
+    type: "manual",
+    requiresAuth: true,
+  });
+  useEffect(() => {
+    fetchServiceCategories();
+    fetchEmployees();
+  }, []);
+
+  // Fetch Services when Category changes
+  useEffect(() => {
+    if (!serviceCategoryId) {
+      setServices([]);
+      return;
+    }
+
+    const fetchServices = async () => {
+      try {
+        const res = await fetch(
+          `/api/admin/employee-services?cat_id=${serviceCategoryId}`,
+          {
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+
+        const data = await res.json();
+        if (data.code === 200) {
+          setServices(data.data);
+        } else {
+          setServices([]);
+        }
+      } catch (error) {
+        console.error("Failed to load services:", error);
+        setServices([]);
+      }
+    };
+
+    fetchServices();
+  }, [serviceCategoryId]);
+
+  // Submit Employee
+  const { sendData, loading } = useApi({
+    url: "/api/admin/employee-services",
+    type: "manual",
+    requiresAuth: true,
+  });
 
   const submitEmployee = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg("");
 
-    if (!name) return setErrorMsg("Employee name is required.");
+    if (!selectedEmployeeId) return setErrorMsg("Employee is required.");
+    if (!serviceCategoryId) return setErrorMsg("Service Category is required.");
+    if (!selectedServiceId) return setErrorMsg("Service is required.");
 
     try {
       const formData = new FormData();
-      formData.append("name", name);
-      formData.append("email", email);
-      formData.append("password", password);
-      formData.append("status", status);
-      if (image) formData.append("image", image);
+      formData.append("userId", selectedEmployeeId);
+      formData.append("serviceCategoryId", serviceCategoryId);
+      formData.append("serviceId", selectedServiceId);
+      formData.append("serviceCategoryTitle", categoryTitle);
+      formData.append("serviceTitle", serviceTitle);
+      formData.append("servicePrice", servicePrice);
 
       const res = await sendData(formData, undefined, "POST");
 
       if (res.code === 200) {
-        router.push("/admin/employee");
+        router.push("/admin/employee-services");
       } else {
-        //setErrorMsg(res.message || "Something went wrong.");
         const validationErrors = Object.values(res.data).join(", ");
-  setErrorMsg(validationErrors);
+        setErrorMsg(validationErrors);
       }
     } catch (err: any) {
       setErrorMsg(err?.message || "An error occurred. Try again.");
@@ -59,11 +123,10 @@ export default function AddEmployee() {
 
   return (
     <div className="p-4 mx-auto md:p-6">
-
       {/* Page Header */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <h2 className="text-xl font-semibold text-gray-800 dark:text-white/90">
-          Add Employee
+          Add Employee Service
         </h2>
 
         <nav>
@@ -83,7 +146,9 @@ export default function AddEmployee() {
               </a>
             </li>
 
-            <li className="text-sm text-gray-800 dark:text-white/90">Add Employee</li>
+            <li className="text-sm text-gray-800 dark:text-white/90">
+              Add Employee Service
+            </li>
           </ol>
         </nav>
       </div>
@@ -105,113 +170,134 @@ export default function AddEmployee() {
 
         <div className="p-4 sm:p-6">
           <form onSubmit={submitEmployee} className="space-y-5">
-
-            {/* Blog Title */}
+            {/* Employee */}
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                  Employee Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                placeholder="Enter employee name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="h-11 w-full rounded-lg border px-4 py-2.5 text-sm shadow-theme-xs
-                bg-transparent border-gray-300 focus:border-brand-300
-                dark:bg-gray-900 dark:text-white dark:border-gray-700"
-              />
-            </div>
-
-            {/* Description */}
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                Email <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="email"
-                placeholder="Enter email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-lg border px-4 py-2.5 text-sm shadow-theme-xs
-                bg-transparent border-gray-300 focus:border-brand-300
-                dark:bg-gray-900 dark:text-white dark:border-gray-700"
-              ></input>
-              </div>
-
-            {/* Mobile Number */}
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                Password <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                placeholder="Enter password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="h-11 w-full rounded-lg border px-4 py-2.5 text-sm shadow-theme-xs
-                bg-transparent border-gray-300 focus:border-brand-300
-                dark:bg-gray-900 dark:text-white dark:border-gray-700"
-              />
-            </div>
-              {/* Employee Image */}
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                Employee Image
-              </label>
-
-              <label className="group block cursor-pointer rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-800 p-6 text-center">
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => {
-                    if (e.target.files && e.target.files[0]) {
-                      setImage(e.target.files[0]);
-                    }
-                  }}
-                />
-
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  <span className="font-medium text-gray-800 dark:text-white">
-                    Click to upload
-                  </span>{" "}
-                  or drag & drop
-                </p>
-
-                {image && (
-                  <p className="text-xs text-green-600 mt-2">{image.name}</p>
-                )}
-              </label>
-            </div>
-
-            {/* Status */}
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                Status
+                Employee <span className="text-red-500">*</span>
               </label>
               <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
+                value={selectedEmployeeId}
+                onChange={(e) => setSelectedEmployeeId(e.target.value)}
                 className="h-11 w-full rounded-lg border px-4 py-2.5 shadow-theme-xs
                 bg-transparent border-gray-300 dark:bg-gray-900 dark:text-white"
               >
-                <option value="1">Active</option>
-                <option value="0">Inactive</option>
+                <option value="">Select Employee</option>
+
+                {employees?.map((employee: any) => (
+                  <option key={employee.id} value={employee.id.toString()}>
+                    {employee.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {/* Service Category */}
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                Service Category <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={serviceCategoryId}
+                onChange={(e) => setServiceCategoryId(e.target.value)}
+                className="h-11 w-full rounded-lg border px-4 py-2.5 shadow-theme-xs
+                bg-transparent border-gray-300 dark:bg-gray-900 dark:text-white"
+              >
+                <option value="">Select Service Category</option>
+
+                {serviceCategories?.map((category: any) => (
+                  <option key={category.id} value={category.id.toString()}>
+                    {category.title}
+                  </option>
+                ))}
               </select>
             </div>
 
-            {/* Submit Buttons */}
-            <div className="flex justify-end gap-3 pt-4">
-              <Button variant="outline" onClick={() => router.back()}>Cancel</Button>
-              <Button type="submit" loading={loading}>
-                Save Employee
-              </Button>
+            {/* Services */}
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                Services <span className="text-red-500">*</span>
+              </label>
+
+              <select
+                  value={selectedServiceId}
+                  onChange={(e) => {
+                    const id = e.target.value;
+                    setSelectedServiceId(id);
+
+                    const service = services.find((s: any) => s.id.toString() === id);
+
+                    if (service) {
+                      setSelectedService(service);
+                      setCategoryTitle(service.serviceCategoryTitle || "");
+                      setServiceTitle(service.serviceTitle || service.title || "");
+                      setServicePrice(service.servicePrice || "");
+                    }
+                  }}
+                  className="h-11 w-full rounded-lg border px-4 py-2.5 shadow-theme-xs
+                  bg-transparent border-gray-300 dark:bg-gray-900 dark:text-white"
+                >
+                  <option value="">Select Services</option>
+
+                  {services.length > 0 ? (
+                    services.map((service: any) => (
+                      <option key={service.id} value={service.id}>
+                        {service.serviceTitle || service.title}
+                      </option>
+                    ))
+                  ) : (
+                    <option disabled>No services found</option>
+                  )}
+                </select>
+            </div>
+            {/* Category Title */}
+            <div>
+              <label className="block mb-1.5 text-sm font-medium dark:text-gray-400">
+                Service Category Title
+              </label>
+              <input
+                type="text"
+                value={categoryTitle}
+                readOnly
+                className="h-11 w-full rounded-lg border px-4 py-2.5 bg-gray-100 dark:bg-gray-800 dark:text-white"
+              />
             </div>
 
+            {/* Service Title */}
+            <div>
+              <label className="block mb-1.5 text-sm font-medium dark:text-gray-400">
+                Service Title
+              </label>
+              <input
+                type="text"
+                value={serviceTitle}
+                readOnly
+                className="h-11 w-full rounded-lg border px-4 py-2.5 bg-gray-100 dark:bg-gray-800 dark:text-white"
+              />
+            </div>
+
+            {/* Service Price */}
+            <div>
+              <label className="block mb-1.5 text-sm font-medium dark:text-gray-400">
+                Service Price
+              </label>
+              <input
+                type="text"
+                value={servicePrice}
+                readOnly
+                className="h-11 w-full rounded-lg border px-4 py-2.5 bg-gray-100 dark:bg-gray-800 dark:text-white"
+              />
+            </div>
+            {/* Submit Buttons */}
+            <div className="flex justify-end gap-3 pt-4">
+              <Button variant="outline" onClick={() => router.back()}>
+                Cancel
+              </Button>
+              <Button type="submit" loading={loading}>
+                Save Employee Service
+              </Button>
+            </div>
           </form>
         </div>
       </div>
     </div>
   );
 }
-
