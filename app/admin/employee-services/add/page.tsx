@@ -12,16 +12,7 @@ export default function AddEmployee() {
     document.title = "Admin | Add Employee";
   }, []);
 
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [dob, setDob] = useState("");
-  const [gender, setGender] = useState("");
-  const [roleId, setRoleId] = useState("");
-  const [image, setImage] = useState<File | null>(null);
-  const [status, setStatus] = useState("1");
   const [errorMsg, setErrorMsg] = useState("");
-
   const [serviceCategoryId, setServiceCategoryId] = useState("");
   const [services, setServices] = useState<any[]>([]);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState("");
@@ -54,35 +45,23 @@ export default function AddEmployee() {
   }, []);
 
   // Fetch Services when Category changes
+  const { data: servicesData, fetchApi: fetchServicesData } = useApi({
+    url: `/api/admin/service?cat_id=${serviceCategoryId}`,
+    method: "GET",
+    type: "manual",
+    requiresAuth: true,
+  });
   useEffect(() => {
-    if (!serviceCategoryId) {
-      setServices([]);
-      return;
-    }
-
-    const fetchServices = async () => {
-      try {
-        const res = await fetch(
-          `/api/admin/employee-services?cat_id=${serviceCategoryId}`,
-          {
-            headers: { "Content-Type": "application/json" },
-          }
-        );
-
-        const data = await res.json();
-        if (data.code === 200) {
-          setServices(data.data);
-        } else {
-          setServices([]);
-        }
-      } catch (error) {
-        console.error("Failed to load services:", error);
-        setServices([]);
-      }
-    };
-
-    fetchServices();
+    if (!serviceCategoryId) return;
+    fetchServicesData();
   }, [serviceCategoryId]);
+  useEffect(() => {
+    if (servicesData) {
+      setServices(servicesData);
+    }
+  }, [servicesData]);
+
+    
 
   // Submit Employee
   const { sendData, loading } = useApi({
@@ -196,11 +175,25 @@ export default function AddEmployee() {
                 Service Category <span className="text-red-500">*</span>
               </label>
               <select
-                value={serviceCategoryId}
-                onChange={(e) => setServiceCategoryId(e.target.value)}
-                className="h-11 w-full rounded-lg border px-4 py-2.5 shadow-theme-xs
-                bg-transparent border-gray-300 dark:bg-gray-900 dark:text-white"
-              >
+                  value={serviceCategoryId}
+                  onChange={(e) => {
+                    const id = e.target.value;
+                    setServiceCategoryId(id);
+
+                    const cat = serviceCategories?.find(
+                      (c: any) => String(c.id) === String(id)
+                    );
+
+                    setCategoryTitle(cat?.title || "");
+
+                    // category change ho to service reset karna best practice
+                    setSelectedServiceId("");
+                    setServiceTitle("");
+                    setServicePrice("0");
+                    setServices([]);
+                  }}
+                  className="h-11 w-full rounded-lg border px-4 py-2.5 dark:bg-gray-900 dark:text-white"
+                >
                 <option value="">Select Service Category</option>
 
                 {serviceCategories?.map((category: any) => (
@@ -227,9 +220,8 @@ export default function AddEmployee() {
 
                     if (service) {
                       setSelectedService(service);
-                      setCategoryTitle(service.serviceCategoryTitle || "");
                       setServiceTitle(service.serviceTitle || service.title || "");
-                      setServicePrice(service.servicePrice || "");
+                      setServicePrice(service.servicePrice || "0");
                     }
                   }}
                   className="h-11 w-full rounded-lg border px-4 py-2.5 shadow-theme-xs
