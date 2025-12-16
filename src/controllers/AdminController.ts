@@ -131,4 +131,16 @@ export default class AdminController extends RestController<
       return this.sendError((err as Error).message, {}, 500);
     }
   }
+
+  async getMenu(): Promise<NextResponse> {
+    try {
+      const user = this.requireUser();
+      if (!user) {
+        return this.sendError("User not found", {user_error: "User not found."}, 404);
+      }
+      return this.__sendResponse(200, "Menu fetched successfully", user);
+    } catch (err) {
+      return this.sendError((err as Error).message, {}, 500);
+    }
+  }
 }

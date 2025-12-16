@@ -189,7 +189,7 @@ export default function AddEmployee() {
                     // category change ho to service reset karna best practice
                     setSelectedServiceId("");
                     setServiceTitle("");
-                    setServicePrice("0");
+                    setServicePrice("");
                     setServices([]);
                   }}
                   className="h-11 w-full rounded-lg border px-4 py-2.5 dark:bg-gray-900 dark:text-white"

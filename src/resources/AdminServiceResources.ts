@@ -11,6 +11,7 @@ export type ExtendedAdminService = {
   imageUrl?: string | null;
   seoTitle?: string | null;
   seoDescription?: string | null;
+  price: number;
   status: boolean;
   createdAt?: Date;
   updatedAt?: Date;
@@ -34,6 +35,7 @@ export default class AdminServiceResource extends BaseResource<ExtendedAdminServ
       servicesCategoryId: service.servicesCategoryId,
       seoTitle: service.seoTitle,
       seoDescription: service.seoDescription,
+      price: service.price,
       status: service.status,
 
       user: service.user ? {

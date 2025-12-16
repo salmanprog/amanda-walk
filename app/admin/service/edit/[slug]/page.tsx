@@ -23,6 +23,7 @@ export default function EditService() {
   const [seoDescription, setSeoDescription] = useState("");
   const [image, setImage] = useState<File | null>(null);
   const [oldImage, setOldImage] = useState<string | null>(null);
+  const [price, setPrice] = useState("");
   const [status, setStatus] = useState("1");
   const [errorMsg, setErrorMsg] = useState("");
   const [serviceCategoryId, setServiceCategoryId] = useState("");
@@ -62,6 +63,7 @@ export default function EditService() {
       setDescription(serviceData.description || "");
       setSeoTitle(serviceData.seoTitle || "");
       setSeoDescription(serviceData.seoDescription || "");
+      setPrice(serviceData.price.toString() || "");
       setStatus(serviceData.status ? "1" : "0");
       setOldImage(serviceData.imageUrl || null);
       setServiceCategoryId(serviceData.servicesCategoryId.toString() || "");
@@ -74,6 +76,7 @@ export default function EditService() {
 
     if (!title) return setErrorMsg("Service title is required.");
     if (!serviceCategoryId) return setErrorMsg("Service category is required.");
+    if (!price) return setErrorMsg("Price is required.");
 
     try {
         const formData = new FormData();
@@ -83,6 +86,7 @@ export default function EditService() {
       formData.append("seoTitle", seoTitle);
       formData.append("seoDescription", seoDescription);
       formData.append("status", status);
+      formData.append("price", price);
       if (image) formData.append("image", image);
       const res = await sendData(formData, undefined, "PATCH");
 
@@ -153,6 +157,18 @@ export default function EditService() {
                 className="w-full rounded-lg border px-4 py-2.5 text-sm"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
+              />
+            </div>
+
+            {/* Price */}
+            <div>
+              <label className="block mb-1 text-sm font-medium">Price</label>
+              <input
+                type="number"
+                placeholder="Enter price"
+                className="h-11 w-full rounded-lg border px-4 py-2.5 text-sm"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
               />
             </div>
 

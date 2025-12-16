@@ -78,33 +78,31 @@ export default class AdminResource extends BaseResource<ExtendedUser> {
       const children = childModules
         .filter((childPerm) => childPerm.cmsModule.parentId === module.id)
         .map((childPerm) => ({
-          id: childPerm.cmsModule.id,
           name: childPerm.cmsModule.name,
-          routeName: childPerm.cmsModule.routeName,
+          path: childPerm.cmsModule.routeName,
           icon: childPerm.cmsModule.icon,
           sortOrder: childPerm.cmsModule.sortOrder,
-          permissions: {
-            isAdd: childPerm.isAdd,
-            isView: childPerm.isView,
-            isUpdate: childPerm.isUpdate,
-            isDelete: childPerm.isDelete,
-          },
+          // permissions: {
+          //   isAdd: childPerm.isAdd,
+          //   isView: childPerm.isView,
+          //   isUpdate: childPerm.isUpdate,
+          //   isDelete: childPerm.isDelete,
+          // },
         }))
         .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
 
       return {
-        id: module.id,
         name: module.name,
-        routeName: module.routeName,
+        path: module.routeName,
         icon: module.icon,
         sortOrder: module.sortOrder,
-        permissions: {
-          isAdd: perm.isAdd,
-          isView: perm.isView,
-          isUpdate: perm.isUpdate,
-          isDelete: perm.isDelete,
-        },
-        children: children.length > 0 ? children : undefined,
+        // permissions: {
+        //   isAdd: perm.isAdd,
+        //   isView: perm.isView,
+        //   isUpdate: perm.isUpdate,
+        //   isDelete: perm.isDelete,
+        // },
+        subItems: children.length > 0 ? children : undefined,
       };
     });
 

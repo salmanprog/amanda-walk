@@ -70,6 +70,7 @@ export const useCurrentUser = () => {
 
         if (res?.code === 200 && res?.data) {
           if (isMounted) {
+            console.log('res.data===================================',res.data)
             setUser(res.data);
             // Cache the user data
             cachedUser = res.data;

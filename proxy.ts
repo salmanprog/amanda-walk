@@ -9,6 +9,7 @@ const protectedApiRoutes = [
   { path: "/api/admin/address", methods: ["POST", "GET", "PATCH", "DELETE"] },
   { path: "/api/admin/users", methods: ["POST", "GET", "PATCH", "DELETE"] },
   { path: "/api/currentuser", methods: ["GET"] },
+  { path: "/api/getmenu", methods: ["GET"] },
   { path: "/api/users/password", methods: ["POST"] },
   { path: "/api/admin/events/category", methods: ["POST", "GET", "PATCH", "DELETE"] },
   { path: "/api/admin/events/category/faq", methods: ["POST", "GET", "PATCH", "DELETE"] },

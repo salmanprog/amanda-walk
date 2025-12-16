@@ -106,35 +106,15 @@ async function main() {
 
   const servicesCategories = [
     {
-      title: "OverNight Services",
-      slug: "overnight-services",
+      title: "Dog Walk",
+      slug: "dog-walk",
       description:
         "Lorem Ipsum is simply dummy text of the printing and typesetting industry...",
       imageUrl: "",
-      seoTitle: "Over-Night Services",
+      seoTitle: "Dog Walk",
       seoDescription:
         "Lorem Ipsum is simply dummy text of the printing and typesetting industry...",
-    },
-    {
-      title: "Day Services",
-      slug: "day-services",
-      description:
-        "Lorem Ipsum is simply dummy text of the printing and typesetting industry...",
-      imageUrl: "",
-      seoTitle: "Day Services",
-      seoDescription:
-        "Lorem Ipsum is simply dummy text of the printing and typesetting industry...",
-    },
-    {
-      title: "Spa Services",
-      slug: "spa-services",
-      description:
-        "Lorem Ipsum is simply dummy text of the printing and typesetting industry...",
-      imageUrl: "",
-      seoTitle: "Spa Services",
-      seoDescription:
-        "Lorem Ipsum is simply dummy text of the printing and typesetting industry...",
-    },
+    }
   ];
   
   for (const category of servicesCategories) {
@@ -149,6 +129,70 @@ async function main() {
         seoTitle: category.seoTitle,
         seoDescription: category.seoDescription,
         status: true,
+      },
+    });
+  }
+  
+  const services = [
+    {
+      title: "15 Min Dog Walk AM",
+      slug: "15-min-dog-walk-am",
+      userId: 1,
+      servicesCategoryId: 1,
+      description:
+        "Lorem Ipsum is simply dummy text of the printing and typesetting industry...",
+      imageUrl: "",
+      seoTitle: "15 Min Dog Walk AM",
+      seoDescription:
+        "Lorem Ipsum is simply dummy text of the printing and typesetting industry...",
+      price: 10,
+      status: true,
+    },
+    {
+      title: "20 Min Dog Walk AM",
+      slug: "20-min-dog-walk-am",
+      userId: 1,
+      servicesCategoryId: 1,
+      description:
+        "Lorem Ipsum is simply dummy text of the printing and typesetting industry...",
+      imageUrl: "",
+      seoTitle: "20 Min Dog Walk AM",
+      seoDescription:
+        "Lorem Ipsum is simply dummy text of the printing and typesetting industry...",
+      price: 15,
+      status: true,
+    },
+    {
+      title: "30 Min Dog Walk AM",
+      slug: "30-min-dog-walk-am",
+      userId: 1,
+      servicesCategoryId: 1,
+      description:
+        "Lorem Ipsum is simply dummy text of the printing and typesetting industry...",
+      imageUrl: "",
+      seoTitle: "30 Min Dog Walk AM",
+      seoDescription:
+        "Lorem Ipsum is simply dummy text of the printing and typesetting industry...",
+      price: 20,
+      status: true,
+    }
+  ];
+  
+  for (const service of services) {
+    await prisma.services.upsert({
+      where: { slug: service.slug },
+      update: {},
+      create: {
+        title: service.title,
+        slug: service.slug,
+        userId: service.userId,
+        servicesCategoryId: service.servicesCategoryId,
+        description: service.description,
+        imageUrl: service.imageUrl,
+        seoTitle: service.seoTitle,
+        seoDescription: service.seoDescription,
+        price: service.price,
+        status: service.status,
       },
     });
   }
@@ -203,168 +247,103 @@ async function main() {
     sortOrder: sortOrder++,
   });
 
-  // MAIN SECTION - Bookings (Parent)
-  const bookingsModule = await findOrCreateModule({
-    name: "Bookings",
-    routeName: "bookings",
-    icon: "Calendar",
+  // MAIN SECTION - Services (Parent)
+  const servicesModule = await findOrCreateModule({
+    name: "Services",
+    routeName: "#",
+    icon: "Boxes",
     sortOrder: sortOrder++,
   });
 
-  // Bookings - All Bookings (Child)
-  const allBookingsModule = await findOrCreateModule({
-    name: "All Bookings",
-    routeName: "#",
+  // MAIN SECTION - Services Categories (Child)
+  const servicesCategoriesModule = await findOrCreateModule({
+    name: "All Service Categories",
+    routeName: "/admin/service-categories/",
     icon: null,
-    parentId: bookingsModule.id,
+    parentId: servicesModule.id,
     sortOrder: 1,
+  });
+
+  // MAIN SECTION - Services (Child)
+  const allServicesModule = await findOrCreateModule({
+    name: "All Services",
+    routeName: "/admin/service/",
+    icon: null,
+    parentId: servicesModule.id,
+    sortOrder: 2,
   });
 
   // MAIN SECTION - Employees (Parent)
   const employeesModule = await findOrCreateModule({
     name: "Employees",
-    routeName: "employees",
+    routeName: "#",
     icon: "UserCircle",
     sortOrder: sortOrder++,
   });
 
-  // Employees - All Employees (Child)
+  // MAIN SECTION - Employees (Child)
   const allEmployeesModule = await findOrCreateModule({
     name: "All Employees",
-    routeName: "#",
+    routeName: "/admin/employee/",
     icon: null,
     parentId: employeesModule.id,
     sortOrder: 1,
   });
 
-  // MAIN SECTION - Payments (Parent)
-  const paymentsModule = await findOrCreateModule({
-    name: "Payments",
-    routeName: "payments",
-    icon: "CreditCard",
-    sortOrder: sortOrder++,
-  });
-
-  // Payments - All Payments (Child)
-  const allPaymentsModule = await findOrCreateModule({
-    name: "All Payments",
-    routeName: "#",
+  // MAIN SECTION - Employee Services (Child)
+  const employeeServicesModule = await findOrCreateModule({
+    name: "All Employee Services",
+    routeName: "/admin/employee-services/",
     icon: null,
-    parentId: paymentsModule.id,
-    sortOrder: 1,
-  });
-
-  // USERS SECTION - Client Management (Parent)
-  const clientManagementModule = await findOrCreateModule({
-    name: "Client Management",
-    routeName: "client-management",
-    icon: "User",
-    sortOrder: sortOrder++,
-  });
-
-  // Client Management - All Clients (Child)
-  const allClientsModule = await findOrCreateModule({
-    name: "All Clients",
-    routeName: "#",
-    icon: null,
-    parentId: clientManagementModule.id,
-    sortOrder: 1,
-  });
-
-  // USERS SECTION - Employee Assignment (Parent)
-  const employeeAssignmentModule = await findOrCreateModule({
-    name: "Employee Assignment",
-    routeName: "employee-assignment",
-    icon: "UserCheck",
-    sortOrder: sortOrder++,
-  });
-
-  // Employee Assignment - All Employee Assignments (Child)
-  const allEmployeeAssignmentsModule = await findOrCreateModule({
-    name: "All Employee Assignments",
-    routeName: "#",
-    icon: null,
-    parentId: employeeAssignmentModule.id,
-    sortOrder: 1,
-  });
-
-  // USERS SECTION - Calendar & Time
-  const calendarTimeModule = await findOrCreateModule({
-    name: "Calendar & Time",
-    routeName: "#",
-    icon: "Calendar",
-    sortOrder: sortOrder++,
-  });
-
-  // PAYMENT & REPORTINGS SECTION - Invoices
-  const invoicesModule = await findOrCreateModule({
-    name: "Invoices",
-    routeName: "#",
-    icon: "DollarSign",
-    sortOrder: sortOrder++,
-  });
-
-  // PAYMENT & REPORTINGS SECTION - Two Week History
-  const twoWeekHistoryModule = await findOrCreateModule({
-    name: "Two Week History",
-    routeName: "#",
-    icon: "HistoryIcon",
-    sortOrder: sortOrder++,
-  });
-
-  // PAYMENT & REPORTINGS SECTION - Appointments Requests
-  const appointmentsRequestsModule = await findOrCreateModule({
-    name: "Appointments Requests",
-    routeName: "#",
-    icon: "CalendarCheck",
-    sortOrder: sortOrder++,
-  });
-
-  // PAYMENT & REPORTINGS SECTION - Send Alert
-  const sendAlertModule = await findOrCreateModule({
-    name: "Send Alert",
-    routeName: "#",
-    icon: "Bell",
-    sortOrder: sortOrder++,
-  });
-
-  // PAYMENT & REPORTINGS SECTION - View Appointments Calendar
-  const viewAppointmentsCalendarModule = await findOrCreateModule({
-    name: "View Appointments Calendar",
-    routeName: "#",
-    icon: "CalendarDays",
-    sortOrder: sortOrder++,
-  });
+    parentId: employeesModule.id,
+    sortOrder: 2,
+  }); 
 
   // Collect all modules for permission creation
-  const allModules = [
+  const superAdminModules = [
     dashboardModule,
-    bookingsModule,
-    allBookingsModule,
+    servicesModule,
+    servicesCategoriesModule,
+    allServicesModule,
     employeesModule,
     allEmployeesModule,
-    paymentsModule,
-    allPaymentsModule,
-    clientManagementModule,
-    allClientsModule,
-    employeeAssignmentModule,
-    allEmployeeAssignmentsModule,
-    calendarTimeModule,
-    invoicesModule,
-    twoWeekHistoryModule,
-    appointmentsRequestsModule,
-    sendAlertModule,
-    viewAppointmentsCalendarModule,
+    employeeServicesModule,
+  ];
+  
+  const adminModules = [
+    dashboardModule,
+    servicesModule,
+    servicesCategoriesModule,
+    allServicesModule,
+    employeesModule,
+    allEmployeesModule,
+    employeeServicesModule,
+  ];
+  
+  const clientModules = [
+    dashboardModule,
+  ];
+  
+  const roleModuleMap = [
+    {
+      role: superAdminRole,
+      modules: superAdminModules,
+      fullAccess: true,
+    },
+    {
+      role: adminRole,
+      modules: adminModules,
+      fullAccess: true,
+    },
+    {
+      role: clientRole,
+      modules: clientModules,
+      fullAccess: false,
+    },
   ];
 
-  // Create permissions for all roles
-  const roles = [superAdminRole, adminRole, clientRole, userRole];
-
-  for (const role of roles) {
-    for (const module of allModules) {
-      // SUPER_ADMIN and ADMIN get full access
-      const isFullAccess = role.type === "SUPER_ADMIN" || role.type === "ADMIN";
-      
+  for (const { role, modules, fullAccess } of roleModuleMap) {
+    for (const module of modules) {
       await prisma.cmsModulePermission.upsert({
         where: {
           userRoleId_cmsModuleId: {
@@ -376,10 +355,10 @@ async function main() {
         create: {
           userRoleId: role.id,
           cmsModuleId: module.id,
-          isAdd: isFullAccess,
-          isView: true, // All roles can view
-          isUpdate: isFullAccess,
-          isDelete: isFullAccess,
+          isView: true,
+          isAdd: fullAccess,
+          isUpdate: fullAccess,
+          isDelete: fullAccess,
         },
       });
     }

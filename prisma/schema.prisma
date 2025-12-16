@@ -242,6 +242,7 @@ model Services {
   imageUrl           String?   @db.VarChar(500)
   seoTitle           String?   @db.VarChar(255)
   seoDescription     String?   @db.Text
+  price             Int
   status             Boolean   @default(true)
   createdAt          DateTime  @default(now()) @db.Timestamp(6)
   updatedAt          DateTime  @updatedAt

@@ -212,6 +212,7 @@ CREATE TABLE `services` (
     `imageUrl` VARCHAR(500) NULL,
     `seoTitle` VARCHAR(255) NULL,
     `seoDescription` TEXT NULL,
+    `price` INTEGER NOT NULL,
     `status` BOOLEAN NOT NULL DEFAULT true,
     `createdAt` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
     `updatedAt` DATETIME(3) NOT NULL,

@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useSidebar } from '@/context/SidebarContext';
+import useApi, { ApiResponse } from "@/utils/useApi";
 import {
   ChevronDown,
   ChevronUp,
@@ -25,6 +26,7 @@ import {
   CalendarCheck,
   Bell,
   CalendarDays,
+  HelpCircle,
 } from 'lucide-react';
 
 interface SubItem {
@@ -39,7 +41,11 @@ interface NavItem {
   path?: string;
   subItems?: SubItem[];
 }
-
+const iconMap: Record<string, React.ElementType> = {
+  LayoutDashboard,
+  Boxes,
+  UserCircle,
+};
 const navItems: NavItem[] = [
   {
     icon: LayoutDashboard,
@@ -170,7 +176,38 @@ const paymentReportItems: NavItem[] = [
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, toggleSidebar, toggleMobileSidebar } = useSidebar();
   const [openMenu, setOpenMenu] = useState<string | null>(null);
-
+  const { data, fetchApi } = useApi({
+    url: "/api/getmenu",
+    method: "GET",
+    type: "manual",
+    requiresAuth: true,
+  });
+  
+  useEffect(() => {
+    fetchApi();
+  }, []);
+  
+  const menu = data?.menu;
+  const normalizeMenu = (apiMenu: any[]): NavItem[] => {
+    if (!Array.isArray(apiMenu)) return [];
+  
+    return apiMenu.map((item) => {
+      const IconComponent = iconMap[item.icon] ?? HelpCircle;
+  
+      return {
+        name: item.name,
+        path: item.path,
+        icon: IconComponent,
+  
+        subItems: item.subItems?.map((sub: any) => ({
+          name: sub.name,
+          path: sub.path,
+          pro: false,
+        })),
+      };
+    });
+  };
+  const menus = normalizeMenu(menu ?? []);
   const toggleMenu = (menu: string) => {
     setOpenMenu(openMenu === menu ? null : menu);
   };
@@ -259,16 +296,16 @@ const AppSidebar: React.FC = () => {
           {isExpanded && (
             <h3 className="text-gray-500 text-sm uppercase mb-2">MAIN</h3>
           )}
-          {renderMenuItems(navItems)}
+          {renderMenuItems(menus)}
 
-          {isExpanded && (
+          {/* {isExpanded && (
             <h3 className="text-gray-500 text-sm uppercase mt-6 mb-2">USERS</h3>
           )}
           {renderMenuItems(othersItems)}
           {isExpanded && (
             <h3 className="text-gray-500 text-sm uppercase mt-6 mb-2">Payment & Reportings</h3>
           )}
-          {renderMenuItems(paymentReportItems)}
+          {renderMenuItems(paymentReportItems)} */}
         </div>
       </div>
 

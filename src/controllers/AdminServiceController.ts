@@ -60,6 +60,9 @@ export default class AdminServiceController extends RestController<
     if (currentUser?.id) {
       this.data!.userId = currentUser.id as number;
     }
+    if (this.data?.price !== undefined) {
+      this.data.price = Number(this.data.price);
+    }
   }
 
   protected async afterStore(record: ExtendedAdminService): Promise<ExtendedAdminService> {
@@ -72,6 +75,9 @@ export default class AdminServiceController extends RestController<
     }
     if (this.data?.status !== undefined) {
       this.data.status = String(this.data.status) === "1";
+    }
+    if (this.data?.price !== undefined) {
+      this.data.price = Number(this.data.price);
     }
   }
 
