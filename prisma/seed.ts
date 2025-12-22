@@ -197,6 +197,16 @@ async function main() {
     });
   }
   
+  await prisma.petType.upsert({
+    where: { slug: 'dog' },
+    update: {},
+    create: { name: 'Dog', slug: 'dog' },
+  });
+  await prisma.petType.upsert({
+    where: { slug: 'cat' },
+    update: {},
+    create: { name: 'Cat', slug: 'cat' },
+  });
   // Helper function to find or create module
   async function findOrCreateModule(data: {
     name: string;

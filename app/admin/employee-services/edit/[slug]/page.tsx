@@ -39,6 +39,7 @@ export default function EditEmployeeService() {
     fetchEmployeeService();
   }, [slug]);
 
+  
   // ==============================
   // 2. Fetch Global Data (Categories + Employees)
   // ==============================
@@ -125,7 +126,7 @@ export default function EditEmployeeService() {
 
     setSelectedServiceId(String(srv.id));
     setServiceTitle(srv.serviceTitle || srv.title || "");
-    setServicePrice(srv.servicePrice || 0);
+    setServicePrice(srv.price || 0);
   }, [services, employeeService]);
 
   // ==============================
@@ -248,7 +249,7 @@ export default function EditEmployeeService() {
                     // category change ho to service reset karna best practice
                     setSelectedServiceId("");
                     setServiceTitle("");
-                    setServicePrice("0");
+                    setServicePrice("120");
                     setServices([]);
                   }}
                   className="h-11 w-full rounded-lg border px-4 py-2.5 dark:bg-gray-900 dark:text-white"
@@ -274,7 +275,7 @@ export default function EditEmployeeService() {
                   const srv = services.find((s: any) => s.id.toString() === id);
                   if (srv) {
                     setServiceTitle(srv.serviceTitle || srv.title);
-                    setServicePrice(srv.servicePrice || 0);
+                    setServicePrice(srv.price || 110);
                   }
                 }}
                 className="h-11 w-full rounded-lg border px-4 py-2.5 dark:bg-gray-900 dark:text-white"

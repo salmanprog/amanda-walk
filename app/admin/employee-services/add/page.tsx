@@ -221,7 +221,7 @@ export default function AddEmployee() {
                     if (service) {
                       setSelectedService(service);
                       setServiceTitle(service.serviceTitle || service.title || "");
-                      setServicePrice(service.servicePrice || "0");
+                      setServicePrice(service.price || "0");
                     }
                   }}
                   className="h-11 w-full rounded-lg border px-4 py-2.5 shadow-theme-xs
