@@ -30,6 +30,17 @@ export const updateUser = yup.object({
   country: yup.string().optional(),
 });
 
+export const storeEmployee = yup.object({
+  name: yup.string().required("Name is required").min(2).max(20),
+  email: yup.string().email("Invalid email").required("Email is required"),
+  password: yup.string().min(6).max(100).required("Password is required"),
+});
+
+export const updateEmployee = yup.object({
+  name: yup.string().min(2).max(20).optional(),
+  mobileNumber: yup.string().optional().nullable(),
+});
+
 export const changePassword = yup.object({
   currentPassword: yup.string().required("Current password is required"),
   newPassword: yup.string().min(6).max(100).required("New password is required"),
@@ -131,13 +142,13 @@ export const updateService = yup.object({
 });
 
 export const storeEmployeeService = yup.object({
-  serviceCategoryId: yup.string().required("Service category is required"),
-  serviceId: yup.string().required("Service is required"),
+  // serviceCategoryId: yup.string().required("Service category is required"),
+  // serviceId: yup.string().required("Service is required"),
 });
 
 export const updateEmployeeService = yup.object({
-  serviceCategoryId: yup.string().required("Service category is required"),
-  serviceId: yup.string().required("Service is required"),
+  // serviceCategoryId: yup.string().required("Service category is required"),
+  // serviceId: yup.string().required("Service is required"),
 });
 
 export const storeBooking = yup.object({

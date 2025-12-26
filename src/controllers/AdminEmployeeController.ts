@@ -1,7 +1,7 @@
 import type { Prisma, User } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import RestController from "@/core/RestController";
-import { storeUser, updateUser, changePassword } from "@/validators/user.validation";
+import { storeEmployee, updateEmployee, changePassword } from "@/validators/user.validation";
 import EmployeeResource from "@/resources/EmployeeResource";
 import { NextRequest, NextResponse } from "next/server";
 import type { DefaultArgs } from "@prisma/client/runtime/library";
@@ -15,6 +15,10 @@ export default class AdminEmployeeController extends RestController<
   Prisma.UserDelegate<DefaultArgs>,
   ExtendedEmployee
 > {
+  private _serviceCategoriesTemp: Array<{
+    categoryId: number | string;
+    services: (number | string)[];
+  }> = [];
     constructor(req?: Request, data?: Partial<ExtendedEmployee>) {
       super(prisma.user as unknown as Prisma.UserDelegate<DefaultArgs> & {
         findMany: (...args: unknown[]) => Promise<unknown>;
@@ -32,9 +36,9 @@ export default class AdminEmployeeController extends RestController<
   protected async validation(action: string) {
     switch (action) {
       case "store":
-        return await this.__validate(storeUser, this.data ?? {});
+        return await this.__validate(storeEmployee, this.data ?? {});
       case "update":
-        return await this.__validate(updateUser, this.data ?? {});
+        return await this.__validate(updateEmployee, this.data ?? {});
     }
   }
 
@@ -70,9 +74,67 @@ export default class AdminEmployeeController extends RestController<
     if (this.data?.status !== undefined) {
       this.data.status = String(this.data.status) === "1";
     }
+    if ((this.data as any)?.serviceCategories) {
+      try {
+        this._serviceCategoriesTemp = JSON.parse(
+          (this.data as any).serviceCategories
+        );
+      } catch {
+        throw new Error("Invalid serviceCategories JSON");
+      }
+  
+      delete (this.data as any).serviceCategories;
+    }
   }
 
   protected async afterStore(record: ExtendedEmployee): Promise<ExtendedEmployee> {
+    const serviceCategories = this._serviceCategoriesTemp;
+    
+    if (!serviceCategories?.length) {
+      await createUserToken(record.id, "web");
+      return record;
+    }
+  
+    const rows: any[] = [];
+  
+    for (const cat of serviceCategories) {
+      for (const serviceId of cat.services) {
+        rows.push({
+          slug: `emp-services-${record.id}-${cat.categoryId}-${serviceId}`,
+          userId: record.id,
+          serviceCategoryId: Number(cat.categoryId),
+          serviceId: Number(serviceId),
+          serviceCategoryTitle: "",
+          serviceTitle: null,
+          servicePrice: "0",
+        });
+      }
+    }
+  
+    await prisma.employeeServices.updateMany({
+      where: { userId: record.id, deletedAt: null },
+      data: { deletedAt: new Date() },
+    });
+  
+    const serviceIds = rows.map(r => r.serviceId);
+    const categoryIds = rows.map(r => r.serviceCategoryId);
+  
+    const [services, categories] = await Promise.all([
+      prisma.services.findMany({ where: { id: { in: serviceIds } } }),
+      prisma.serviceCategory.findMany({ where: { id: { in: categoryIds } } }),
+    ]);
+  
+    const serviceMap = Object.fromEntries(services.map(s => [s.id, s]));
+    const categoryMap = Object.fromEntries(categories.map(c => [c.id, c]));
+  
+    for (const row of rows) {
+      row.serviceTitle = serviceMap[row.serviceId]?.title ?? null;
+      row.serviceCategoryTitle = categoryMap[row.serviceCategoryId]?.title ?? "";
+      row.servicePrice = String(serviceMap[row.serviceId]?.price ?? "0");
+    }
+  
+    await prisma.employeeServices.createMany({ data: rows });
+
     await createUserToken(
       record.id,
       "web"
@@ -97,9 +159,68 @@ export default class AdminEmployeeController extends RestController<
     if (this.data?.status !== undefined) {
       this.data.status = String(this.data.status) === "1";
     }
+
+    if ((this.data as any)?.serviceCategories) {
+      try {
+        this._serviceCategoriesTemp = JSON.parse(
+          (this.data as any).serviceCategories
+        );
+      } catch {
+        throw new Error("Invalid serviceCategories JSON");
+      }
+  
+      delete (this.data as any).serviceCategories;
+    }
   }
 
   protected async afterUpdate(record: ExtendedEmployee): Promise<ExtendedEmployee> {
+    const serviceCategories = this._serviceCategoriesTemp;
+    
+    if (!serviceCategories?.length) {
+      return record;
+    }
+    await prisma.employeeServices.deleteMany({ where: { userId: record.id } });
+    
+    const rows: any[] = [];
+  
+    for (const cat of serviceCategories) {
+      for (const serviceId of cat.services) {
+        rows.push({
+          slug: `emp-services-${record.id}-${cat.categoryId}-${serviceId}`,
+          userId: record.id,
+          serviceCategoryId: Number(cat.categoryId),
+          serviceId: Number(serviceId),
+          serviceCategoryTitle: "",
+          serviceTitle: null,
+          servicePrice: "0",
+        });
+      }
+    }
+  
+    await prisma.employeeServices.updateMany({
+      where: { userId: record.id, deletedAt: null },
+      data: { deletedAt: new Date() },
+    });
+  
+    const serviceIds = rows.map(r => r.serviceId);
+    const categoryIds = rows.map(r => r.serviceCategoryId);
+  
+    const [services, categories] = await Promise.all([
+      prisma.services.findMany({ where: { id: { in: serviceIds } } }),
+      prisma.serviceCategory.findMany({ where: { id: { in: categoryIds } } }),
+    ]);
+  
+    const serviceMap = Object.fromEntries(services.map(s => [s.id, s]));
+    const categoryMap = Object.fromEntries(categories.map(c => [c.id, c]));
+  
+    for (const row of rows) {
+      row.serviceTitle = serviceMap[row.serviceId]?.title ?? null;
+      row.serviceCategoryTitle = categoryMap[row.serviceCategoryId]?.title ?? "";
+      row.servicePrice = String(serviceMap[row.serviceId]?.price ?? "0");
+    }
+  
+    await prisma.employeeServices.createMany({ data: rows });
+
     return record;
   }
 

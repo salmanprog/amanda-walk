@@ -14,18 +14,17 @@ const UserContext = createContext<UserContextType>({
   user: null,
   loading: true,
   refreshUser: async () => {},
-  setUser: () => {}, // default no-op
+  setUser: () => {}, 
 });
 
 export const UserProvider = ({ children }: { children: React.ReactNode }) => {
-  const { data, loading, fetchApi } = useApi({
-    url: "/api/admin/profile/1",
+  const [user, setUser] = useState<any>(null);
+  const { data, loading, fetchApi: fetchUser } = useApi({
+    url: "/api/currentuser",
     method: "GET",
     type: "manual",
     requiresAuth: true,
   });
-
-  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
     const token =
@@ -34,16 +33,18 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
       getCookie("token");
 
     if (token) {
-      fetchApi();
+      fetchUser();
     }
   }, []);
 
   useEffect(() => {
-    if (data) setUser(data);
-  }, [data]);
+    if (data) {
+      setUser(data);
+    }
+  }, [data, user]);
 
   const refreshUser = async () => {
-    await fetchApi();
+    await fetchUser();
   };
 
   const getCookie = (name: string) => {

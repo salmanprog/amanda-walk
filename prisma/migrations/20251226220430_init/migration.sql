@@ -77,7 +77,7 @@ CREATE TABLE `User` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `userGroupId` INTEGER NULL,
     `createdBy` INTEGER NOT NULL DEFAULT 0,
-    `userType` ENUM('SUPER_ADMIN', 'ADMIN', 'CLIENT', 'USER') NOT NULL DEFAULT 'USER',
+    `userType` ENUM('SUPER_ADMIN', 'ADMIN', 'Employee', 'USER') NOT NULL DEFAULT 'USER',
     `name` VARCHAR(255) NULL,
     `lname` VARCHAR(255) NULL,
     `username` VARCHAR(150) NOT NULL DEFAULT 'temp_username',

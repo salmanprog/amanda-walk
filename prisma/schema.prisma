@@ -396,7 +396,7 @@ enum MediaType {
 enum UserType {
   SUPER_ADMIN
   ADMIN
-  CLIENT
+  Employee
   USER
 }
 

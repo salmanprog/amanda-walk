@@ -12,7 +12,11 @@ export default class UserHook {
       userRole: true,
       apiTokens: true,
     };
-    query.where = { ...query.where, deletedAt: null,userGroupId: 2 };
+    if(request && (request?.query as any)?.group_id) {
+      query.where = { ...query.where, deletedAt: null,userGroupId: Number((request?.query as any)?.group_id) };
+    }else{
+      query.where = { ...query.where, deletedAt: null,userGroupId: 2 };
+    }
     if (user && user.id) {
       query.where = { ...query.where, id: { not: Number(user.id) } };
     }
@@ -43,7 +47,8 @@ export default class UserHook {
       userRole: true,
       apiTokens: true,
     };
-    query.where = { ...query.where, deletedAt: null,userGroupId: 2 };
+    query.where = { ...query.where, deletedAt: null};
+    //query.where = { ...query.where, deletedAt: null,userGroupId: 2 };
 
     return query;
   }

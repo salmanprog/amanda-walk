@@ -11,6 +11,7 @@ export default class EmployeeHook {
     query.include = {
       userRole: true,
       apiTokens: true,
+      employeeservices: true,
     };
     query.where = { ...query.where, deletedAt: null,userGroupId: 3 };
     if (user && user.id) {
@@ -42,6 +43,7 @@ export default class EmployeeHook {
     query.include = {
       userRole: true,
       apiTokens: true,
+      employeeservices: true,
     };
     query.where = { ...query.where, deletedAt: null,userGroupId: 3 };
 

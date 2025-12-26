@@ -7,24 +7,17 @@ import useApi from "@/utils/useApi";
 export default function AddEmployee() {
   const router = useRouter();
 
-  // Set page title
   useEffect(() => {
     document.title = "Admin | Add Employee";
   }, []);
 
   const [errorMsg, setErrorMsg] = useState("");
-  const [serviceCategoryId, setServiceCategoryId] = useState("");
-  const [services, setServices] = useState<any[]>([]);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState("");
-  const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
-  const [selectedServiceId, setSelectedServiceId] = useState("");
-  const [selectedService, setSelectedService] = useState<any>(null);
 
-  const [categoryTitle, setCategoryTitle] = useState("");
-  const [serviceTitle, setServiceTitle] = useState("");
-  const [servicePrice, setServicePrice] = useState("");
+  const [selectedCategories, setSelectedCategories] = useState<any[]>([]);
+  const [servicesByCategory, setServicesByCategory] = useState<Record<string, any[]>>({});
+  const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
 
-  // Fetch Service Categories
   const { data: serviceCategories, fetchApi: fetchServiceCategories } = useApi({
     url: "/api/admin/service-category",
     method: "GET",
@@ -32,38 +25,80 @@ export default function AddEmployee() {
     requiresAuth: true,
   });
 
-  // Fetch Employees
   const { data: employees, fetchApi: fetchEmployees } = useApi({
     url: "/api/admin/employee",
     method: "GET",
     type: "manual",
     requiresAuth: true,
   });
+
+  const {
+    data: servicesData,
+    fetchApi: fetchServicesData,
+    loading: servicesLoading,
+  } = useApi({
+    url: activeCategoryId ? `/api/admin/service?cat_id=${activeCategoryId}` : "",
+    method: "GET",
+    type: "manual",
+    requiresAuth: true,
+  });
+
   useEffect(() => {
     fetchServiceCategories();
     fetchEmployees();
   }, []);
 
-  // Fetch Services when Category changes
-  const { data: servicesData, fetchApi: fetchServicesData } = useApi({
-    url: `/api/admin/service?cat_id=${serviceCategoryId}`,
-    method: "GET",
-    type: "manual",
-    requiresAuth: true,
-  });
   useEffect(() => {
-    if (!serviceCategoryId) return;
-    fetchServicesData();
-  }, [serviceCategoryId]);
+    if (activeCategoryId) {
+      fetchServicesData();
+    }
+  }, [activeCategoryId]);
+
   useEffect(() => {
-    if (servicesData) {
-      setServices(servicesData);
+    if (activeCategoryId && Array.isArray(servicesData)) {
+      setServicesByCategory((prev) => ({
+        ...prev,
+        [activeCategoryId]: servicesData,
+      }));
     }
   }, [servicesData]);
 
-    
+  const handleCategoryChange = (categoryId: string, isChecked: boolean) => {
+    if (isChecked) {
+      setSelectedCategories((prev) => {
+        if (prev.find((c) => c.categoryId === categoryId)) return prev;
+        return [...prev, { categoryId, services: [] }];
+      });
+  
+      // Force re-trigger even if same ID
+      setActiveCategoryId(null);
+      setTimeout(() => setActiveCategoryId(categoryId), 0);
+    } else {
+      setSelectedCategories((prev) => prev.filter((c) => c.categoryId !== categoryId));
+  
+      setServicesByCategory((prev) => {
+        const copy = { ...prev };
+        delete copy[categoryId];
+        return copy;
+      });
+    }
+  };
 
-  // Submit Employee
+  const handleServiceChange = (categoryId: string, serviceId: string, checked: boolean) => {
+    setSelectedCategories((prev) =>
+      prev.map((cat) =>
+        cat.categoryId === categoryId
+          ? {
+              ...cat,
+              services: checked
+                ? [...cat.services, serviceId]
+                : cat.services.filter((id: string) => id !== serviceId),
+            }
+          : cat
+      )
+    );
+  };
+
   const { sendData, loading } = useApi({
     url: "/api/admin/employee-services",
     type: "manual",
@@ -75,26 +110,18 @@ export default function AddEmployee() {
     setErrorMsg("");
 
     if (!selectedEmployeeId) return setErrorMsg("Employee is required.");
-    if (!serviceCategoryId) return setErrorMsg("Service Category is required.");
-    if (!selectedServiceId) return setErrorMsg("Service is required.");
-
+    if (!selectedCategories.length) return setErrorMsg("Select at least one service.");
     try {
-      const formData = new FormData();
-      formData.append("userId", selectedEmployeeId);
-      formData.append("serviceCategoryId", serviceCategoryId);
-      formData.append("serviceId", selectedServiceId);
-      formData.append("serviceCategoryTitle", categoryTitle);
-      formData.append("serviceTitle", serviceTitle);
-      formData.append("servicePrice", servicePrice);
-
-      const res = await sendData(formData, undefined, "POST");
-
-      if (res.code === 200) {
-        router.push("/admin/employee-services");
-      } else {
-        const validationErrors = Object.values(res.data).join(", ");
-        setErrorMsg(validationErrors);
-      }
+    const formData = new FormData();
+    formData.append("userId", selectedEmployeeId);
+    formData.append("serviceCategories", JSON.stringify(selectedCategories));
+    const res = await sendData(formData, undefined, "POST");
+    if (res.code === 200) {
+      router.push("/admin/employee-services");
+    } else {
+      const validationErrors = Object.values(res.data).join(", ");
+      setErrorMsg(validationErrors);
+    }
     } catch (err: any) {
       setErrorMsg(err?.message || "An error occurred. Try again.");
     }
@@ -102,194 +129,79 @@ export default function AddEmployee() {
 
   return (
     <div className="p-4 mx-auto md:p-6">
-      {/* Page Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-        <h2 className="text-xl font-semibold text-gray-800 dark:text-white/90">
-          Add Employee Service
-        </h2>
-
-        <nav>
-          <ol className="flex items-center gap-1.5">
-            <li>
-              <a
-                className="inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400"
-                href="/admin"
-              >
-                Home
-                <svg className="stroke-current" width="17" height="16">
-                  <path
-                    d="M6.0765 12.667L10.2432 8.50033L6.0765 4.33366"
-                    strokeWidth="1.2"
-                  />
-                </svg>
-              </a>
-            </li>
-
-            <li className="text-sm text-gray-800 dark:text-white/90">
-              Add Employee Service
-            </li>
-          </ol>
-        </nav>
-      </div>
-
-      {/* Error Message */}
       {errorMsg && (
         <div className="mb-4 p-3 rounded-lg bg-red-100 text-red-700 text-sm">
           {errorMsg}
         </div>
       )}
 
-      {/* Form */}
-      <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
-        <div className="border-b border-gray-200 px-6 py-4 dark:border-gray-800">
-          <h2 className="text-lg font-medium text-gray-800 dark:text-white">
-            Employee Details
-          </h2>
+      <form onSubmit={submitEmployee} className="space-y-5">
+        <div>
+          <label className="block mb-1.5">Employee *</label>
+          <select
+            value={selectedEmployeeId}
+            onChange={(e) => setSelectedEmployeeId(e.target.value)}
+            className="h-11 w-full rounded border px-3"
+          >
+            <option value="">Select Employee</option>
+            {employees?.map((emp: any) => (
+              <option key={emp.id} value={emp.id}>
+                {emp.name}
+              </option>
+            ))}
+          </select>
         </div>
 
-        <div className="p-4 sm:p-6">
-          <form onSubmit={submitEmployee} className="space-y-5">
-            {/* Employee */}
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                Employee <span className="text-red-500">*</span>
-              </label>
-              <select
-                value={selectedEmployeeId}
-                onChange={(e) => setSelectedEmployeeId(e.target.value)}
-                className="h-11 w-full rounded-lg border px-4 py-2.5 shadow-theme-xs
-                bg-transparent border-gray-300 dark:bg-gray-900 dark:text-white"
-              >
-                <option value="">Select Employee</option>
+        <div>
+          <label className="block mb-1.5">Service Categories *</label>
+          <div className="space-y-3">
+            {serviceCategories?.map((cat: any) => (
+              <div key={cat.id}>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    onChange={(e) => handleCategoryChange(cat.id.toString(), e.target.checked)}
+                  />
+                  {cat.title}
+                </label>
 
-                {employees?.map((employee: any) => (
-                  <option key={employee.id} value={employee.id.toString()}>
-                    {employee.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            {/* Service Category */}
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                Service Category <span className="text-red-500">*</span>
-              </label>
-              <select
-                  value={serviceCategoryId}
-                  onChange={(e) => {
-                    const id = e.target.value;
-                    setServiceCategoryId(id);
+                {selectedCategories.find((c) => c.categoryId === cat.id.toString()) && (
+                  <div className="pl-6 space-y-2 mt-2">
+                    {servicesLoading && activeCategoryId === cat.id.toString() && (
+                      <div className="text-sm text-gray-400">Loading services...</div>
+                    )}
 
-                    const cat = serviceCategories?.find(
-                      (c: any) => String(c.id) === String(id)
-                    );
-
-                    setCategoryTitle(cat?.title || "");
-
-                    // category change ho to service reset karna best practice
-                    setSelectedServiceId("");
-                    setServiceTitle("");
-                    setServicePrice("");
-                    setServices([]);
-                  }}
-                  className="h-11 w-full rounded-lg border px-4 py-2.5 dark:bg-gray-900 dark:text-white"
-                >
-                <option value="">Select Service Category</option>
-
-                {serviceCategories?.map((category: any) => (
-                  <option key={category.id} value={category.id.toString()}>
-                    {category.title}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Services */}
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                Services <span className="text-red-500">*</span>
-              </label>
-
-              <select
-                  value={selectedServiceId}
-                  onChange={(e) => {
-                    const id = e.target.value;
-                    setSelectedServiceId(id);
-
-                    const service = services.find((s: any) => s.id.toString() === id);
-
-                    if (service) {
-                      setSelectedService(service);
-                      setServiceTitle(service.serviceTitle || service.title || "");
-                      setServicePrice(service.price || "0");
-                    }
-                  }}
-                  className="h-11 w-full rounded-lg border px-4 py-2.5 shadow-theme-xs
-                  bg-transparent border-gray-300 dark:bg-gray-900 dark:text-white"
-                >
-                  <option value="">Select Services</option>
-
-                  {services.length > 0 ? (
-                    services.map((service: any) => (
-                      <option key={service.id} value={service.id}>
+                    {servicesByCategory[cat.id]?.map((service: any) => (
+                      <label key={service.id} className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={selectedCategories
+                            .find((c) => c.categoryId === cat.id.toString())
+                            ?.services.includes(service.id.toString())}
+                          onChange={(e) =>
+                            handleServiceChange(
+                              cat.id.toString(),
+                              service.id.toString(),
+                              e.target.checked
+                            )
+                          }
+                        />
                         {service.serviceTitle || service.title}
-                      </option>
-                    ))
-                  ) : (
-                    <option disabled>No services found</option>
-                  )}
-                </select>
-            </div>
-            {/* Category Title */}
-            <div>
-              <label className="block mb-1.5 text-sm font-medium dark:text-gray-400">
-                Service Category Title
-              </label>
-              <input
-                type="text"
-                value={categoryTitle}
-                readOnly
-                className="h-11 w-full rounded-lg border px-4 py-2.5 bg-gray-100 dark:bg-gray-800 dark:text-white"
-              />
-            </div>
-
-            {/* Service Title */}
-            <div>
-              <label className="block mb-1.5 text-sm font-medium dark:text-gray-400">
-                Service Title
-              </label>
-              <input
-                type="text"
-                value={serviceTitle}
-                readOnly
-                className="h-11 w-full rounded-lg border px-4 py-2.5 bg-gray-100 dark:bg-gray-800 dark:text-white"
-              />
-            </div>
-
-            {/* Service Price */}
-            <div>
-              <label className="block mb-1.5 text-sm font-medium dark:text-gray-400">
-                Service Price
-              </label>
-              <input
-                type="text"
-                value={servicePrice}
-                readOnly
-                className="h-11 w-full rounded-lg border px-4 py-2.5 bg-gray-100 dark:bg-gray-800 dark:text-white"
-              />
-            </div>
-            {/* Submit Buttons */}
-            <div className="flex justify-end gap-3 pt-4">
-              <Button variant="outline" onClick={() => router.back()}>
-                Cancel
-              </Button>
-              <Button type="submit" loading={loading}>
-                Save Employee Service
-              </Button>
-            </div>
-          </form>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+
+        <div className="flex justify-end gap-3">
+          <Button type="submit" loading={loading}>
+            Save
+          </Button>
+        </div>
+      </form>
     </div>
   );
 }
