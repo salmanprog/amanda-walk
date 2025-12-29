@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Button from "@/components/ui/button/Button";
 import useApi from "@/utils/useApi";
-import { useUser } from "@/context/UserContext";
+
 type SelectedCategory = {
   categoryId: string;
   services: string[];
@@ -13,19 +13,14 @@ type SelectedCategory = {
 export default function EditEmployee() {
   const router = useRouter();
   const params = useParams();
-  const { user } = useUser();
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [status, setStatus] = useState("1");
-  useEffect(() => {
-    if (user?.id) {
-      setName(user.name || "");
-      setEmail(user.email || "");
-    }
-  }, [user]);
-  const slug = user?.slug as string;
+  const slug = params?.slug as string;
 
   /* ================= BASIC STATES ================= */
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [status, setStatus] = useState("1");
+  const [image, setImage] = useState<File | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
 
   /* ================= SERVICES STATES ================= */
@@ -83,7 +78,7 @@ export default function EditEmployee() {
 
   /* ================= PAGE LOAD ================= */
   useEffect(() => {
-    document.title = "Admin | Edit Services";
+    document.title = "Admin | Edit Employee";
     fetchEmployee();
     fetchCategories();
   }, [slug]);
@@ -159,7 +154,7 @@ export default function EditEmployee() {
 
       if (remaining.length === 0) {
         setActiveCategoryId(null);
-        setServicesReady(true);
+        setServicesReady(true); // ✅ THIS FIXES FIRST-LOAD BUG
       } else {
         setActiveCategoryId(remaining[0]);
       }
@@ -220,8 +215,10 @@ export default function EditEmployee() {
 
     const formData = new FormData();
     formData.append("name", name);
-    formData.append("email", email);      
+    formData.append("email", email);
+    if (password) formData.append("password", password);
     formData.append("status", status);
+    if (image) formData.append("image", image);
     formData.append("serviceCategories", JSON.stringify(selectedCategories));
 
     const res = await sendData(formData, undefined, "PATCH");
@@ -238,7 +235,7 @@ export default function EditEmployee() {
   /* ================= UI ================= */
   return (
     <div className="p-6">
-      <h2 className="text-xl font-semibold mb-4">Edit Services</h2>
+      <h2 className="text-xl font-semibold mb-4">Edit Employee</h2>
 
       {errorMsg && (
         <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">
@@ -247,6 +244,19 @@ export default function EditEmployee() {
       )}
 
       <form onSubmit={submitEmployee} className="space-y-4">
+        <input
+          className="border p-2 w-full"
+          placeholder="Employee Name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
+
+        <input
+          className="border p-2 w-full"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
 
         {!servicesReady ? (
           <div className="text-sm text-gray-400">
@@ -300,7 +310,7 @@ export default function EditEmployee() {
         )}
 
         <Button type="submit" loading={loading}>
-          Update Services
+          Update Employee
         </Button>
       </form>
     </div>

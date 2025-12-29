@@ -197,6 +197,16 @@ async function main() {
     });
   }
   
+  await prisma.petType.upsert({
+    where: { slug: 'dog' },
+    update: {},
+    create: { name: 'Dog', slug: 'dog' },
+  });
+  await prisma.petType.upsert({
+    where: { slug: 'cat' },
+    update: {},
+    create: { name: 'Cat', slug: 'cat' },
+  });
   // Helper function to find or create module
   async function findOrCreateModule(data: {
     name: string;
@@ -281,7 +291,7 @@ async function main() {
     sortOrder: sortOrder++,
   });
 
-  // MAIN SECTION - Employees (Child)
+  // MAIN SECTION - Employees (Parent)
   const allEmployeesModule = await findOrCreateModule({
     name: "All Employees",
     routeName: "/admin/employee/",
@@ -290,14 +300,13 @@ async function main() {
     sortOrder: 1,
   });
 
-  // MAIN SECTION - Employee Services (Child)
-  const employeeServicesModule = await findOrCreateModule({
+   // MAIN SECTION - Employees Services (Parent)
+   const allEmployeeServicesModule = await findOrCreateModule({
     name: "All Employee Services",
     routeName: "/admin/employee-services/",
-    icon: null,
-    parentId: employeesModule.id,
-    sortOrder: 2,
-  }); 
+    icon: "Boxes",
+    sortOrder: 1,
+  });
 
   // Collect all modules for permission creation
   const superAdminModules = [
@@ -307,7 +316,6 @@ async function main() {
     allServicesModule,
     employeesModule,
     allEmployeesModule,
-    employeeServicesModule,
   ];
   
   const adminModules = [
@@ -317,11 +325,11 @@ async function main() {
     allServicesModule,
     employeesModule,
     allEmployeesModule,
-    employeeServicesModule,
   ];
   
   const clientModules = [
     dashboardModule,
+    allEmployeeServicesModule,
   ];
   
   const roleModuleMap = [

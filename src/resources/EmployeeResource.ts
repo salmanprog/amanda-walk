@@ -5,7 +5,7 @@ import { User, UserRole, UserApiToken, EmployeeServices } from "@prisma/client";
 export type ExtendedEmployee = User & {
   userRole?: UserRole | null;
   apiTokens?: UserApiToken[];
-  services?: EmployeeServices[];
+  employeeservices?: EmployeeServices[];
 };
 
 export default class EmployeeResource extends BaseResource<ExtendedEmployee> {
@@ -33,12 +33,15 @@ export default class EmployeeResource extends BaseResource<ExtendedEmployee> {
         apiToken: token.api_token,
         deviceType: token.device_type,
       })) ?? [],
-      // services: employee.employeeServices?.map((service) => ({
-      //   id: service.id,
-      //   serviceCategoryTitle: service.serviceCategoryTitle,
-      //   serviceTitle: service.serviceTitle,
-      //   servicePrice: service.servicePrice,
-      // })) ?? [],
+      employeeservices: employee.employeeservices?.map((service) => ({
+        id: service.id,
+        slug: service.slug,
+        serviceCategoryId: service.serviceCategoryId,
+        serviceId: service.serviceId,
+        serviceCategoryTitle: service.serviceCategoryTitle,
+        serviceTitle: service.serviceTitle,
+        servicePrice: service.servicePrice,
+      })) ?? [],
     };
   }
 }

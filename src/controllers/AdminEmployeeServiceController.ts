@@ -65,17 +65,17 @@ export default class AdminEmployeeServiceController extends RestController<
         return this.sendError("Validation failed", { userId: "Employee already has a service" }, 400);
       }
     }
-    if (this.data?.serviceCategoryId) {
-      this.data.slug = await generateSlug("employeeServices" as any, String(this.data.serviceCategoryId));
-    }
+    // if (this.data?.serviceCategoryId) {
+    //   this.data.slug = await generateSlug("employeeServices" as any, String(this.data.serviceCategoryId));
+    // }
 
-    if (this.data?.serviceCategoryId !== undefined) {
-      this.data.serviceCategoryId = Number(this.data.serviceCategoryId);
-    }
+    // if (this.data?.serviceCategoryId !== undefined) {
+    //   this.data.serviceCategoryId = Number(this.data.serviceCategoryId);
+    // }
 
-    if (this.data?.serviceId !== undefined) {
-      this.data.serviceId = Number(this.data.serviceId);
-    }
+    // if (this.data?.serviceId !== undefined) {
+    //   this.data.serviceId = Number(this.data.serviceId);
+    // }
 
     if (current_user?.id) {
       this.data!.userId = Number(this.data!.userId);

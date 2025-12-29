@@ -12,9 +12,9 @@ export default class EmployeeHook {
       user: true,
     };
     query.where = { ...query.where, deletedAt: null };
-    if (user && user.id) {
-      query.where = { ...query.where, id: { not: Number(user.id) } };
-    }
+    // if (user && user.id) {
+    //   query.where = { ...query.where, id: { not: Number(user.id) } };
+    // }
     if (request && typeof request.q === "string") {
       query.where = {
         ...query.where,
@@ -31,6 +31,15 @@ export default class EmployeeHook {
         query.where = { 
           ...query.where,     
           serviceCategoryId: typeof cat_id === 'string' ? parseInt(cat_id, 10) : Number(cat_id)
+        };
+      }
+    }
+    if (request?.query && typeof request.query === 'object' && 'service_id' in request.query) {    
+      const service_id = request.query.service_id;
+      if (service_id) {
+        query.where = { 
+          ...query.where,     
+          serviceId: typeof service_id === 'string' ? parseInt(service_id, 10) : Number(service_id)
         };
       }
     }

@@ -5,6 +5,7 @@ import type { NextRequest } from "next/server";
 
 const protectedApiRoutes = [
   { path: "/api/users/profile", methods: ["GET", "PATCH"] },
+  { path: "/api/users/pet", methods: ["POST", "GET", "PATCH", "DELETE"] },
   { path: "/api/admin/profile", methods: ["GET", "PATCH"] },
   { path: "/api/admin/address", methods: ["POST", "GET", "PATCH", "DELETE"] },
   { path: "/api/admin/users", methods: ["POST", "GET", "PATCH", "DELETE"] },
@@ -19,7 +20,8 @@ const protectedApiRoutes = [
   { path: "/api/admin/employee", methods: ["POST", "GET", "PATCH", "DELETE"] },
   { path: "/api/admin/employee-service", methods: ["POST", "GET", "PATCH", "DELETE"] },
   { path: "/api/admin/events", methods: ["POST", "GET", "PATCH", "DELETE"] },
-  
+  { path: "/api/admin/pet-type", methods: ["POST", "GET", "PATCH", "DELETE"] },
+  { path: "/api/admin/pet", methods: ["POST", "GET", "PATCH", "DELETE"] },
 ];
 
 export async function proxy(req: NextRequest) {

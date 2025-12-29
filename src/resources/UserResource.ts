@@ -15,6 +15,15 @@ export default class UserResource extends BaseResource<ExtendedUser> {
       name: user.name,
       email: user.email,
       mobileNumber: user.mobileNumber,
+      emergencyname: user.emergencyname,
+      emergencyNumber: user.emergencyNumber,
+      referedBy: user.referedBy,
+      vetName: user.vetName,
+      streetAddress: user.streetAddress,
+      city: user.city,
+      state: user.state,
+      postalCode: user.postalCode,
+      country: user.country,
       imageUrl: user.imageUrl
         ? `${process.env.NEXT_PUBLIC_APP_URL || ""}${user.imageUrl}`
         : null,
