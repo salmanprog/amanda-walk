@@ -1,5 +1,6 @@
 import Footer from '@/components/common/Footer';
 import Header from '@/components/common/Header';
+import { Toaster } from 'react-hot-toast'
 
 export default function FrontendLayout({ 
   children
@@ -10,7 +11,9 @@ export default function FrontendLayout({
   return (
     <div>
       {/* <Header /> */}
-      <main>{children}</main>
+      <main>{children}
+      <Toaster position="top-right" />
+      </main>
       {/* <Footer /> */}
     </div>
   );

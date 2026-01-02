@@ -4,7 +4,8 @@
 
 
 :root {
-  --primary-theme: #f1e712;
+  --primary-theme: #45589D;
+  --primary-theme-light: #45589da6;
   --secondary-theme: #061246;
   --secondary-theme-light: #0F1B4F;
   --primary-font: 'Sogeo Script', cursive;
@@ -53,7 +54,6 @@
   --font-*: initial;
   --font-outfit: Outfit, sans-serif;
   --font-roboto: var(--font-roboto);
-
 
   --breakpoint-*: initial;
   --breakpoint-2xsm: 375px;
@@ -339,6 +339,27 @@
     display: none;
     -webkit-appearance: none;
   }
+
+  .glass-effect {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+
+  .gradient-text {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .shadow-glow {
+    box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+  }
+}
+
+.primary-theme-text {
+  color: var(--primary-theme);
 }
 
 /* third-party libraries CSS */
@@ -962,7 +983,7 @@ body {
   overflow: hidden;
 }
 .btn-primary {
-  @apply bg-[var(--primary-theme)] text-black;
+  @apply bg-[var(--primary-theme)] text-white;
   border: none;
 }
 /* .btn-primary::before {
@@ -1298,6 +1319,40 @@ li {
   content:"Loading..."
 }
 @keyframes l7 {to{background-position: left}}
+
+
+/* amanda css */
+.react-calendar {
+  border: none !important;
+  border-radius: 16px !important;
+  padding: 20px !important;
+  background: white !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+}
+
+.react-calendar__tile--active {
+  background: #667eea !important;
+  color: white !important;
+  border-radius: 8px !important;
+}
+
+.react-calendar__tile--now {
+  background: #e0f2fe !important;
+  border-radius: 8px !important;
+}
+
+.react-calendar__tile:hover {
+  background: #f0f9ff !important;
+  border-radius: 8px !important;
+}
+.ring-primary-100 {
+  --tw-ring-opacity: 1;
+  --tw-ring-color: rgb(224 242 254/var(--tw-ring-opacity, 1))
+}
+
+
+
+
 /* responsive */
 
 @media(max-width: 991px) {
