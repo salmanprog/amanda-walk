@@ -46,7 +46,9 @@
     "swiper": "^11.2.0",
     "tailwind-merge": "^2.6.0",
     "yet-another-react-lightbox": "^3.25.0",
-    "yup": "^1.7.1"
+    "yup": "^1.7.1",
+    "framer-motion": "^11.0.0",
+    "react-hot-toast": "^2.4.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
