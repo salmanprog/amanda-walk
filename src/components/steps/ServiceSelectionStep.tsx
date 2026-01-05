@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Scissors, Heart, Sparkles, ArrowRight, ArrowLeft, Info, ChevronLeft, ChevronRight } from 'lucide-react'
 import { BookingData } from '@/types/booking';
@@ -61,13 +61,19 @@ export default function ServiceSelectionStep({
   nextStep,
   prevStep,
 }: ServiceSelectionStepProps) {
+  const getItemsPerView = () => {
+    if (typeof window === 'undefined') return 3
+    if (window.innerWidth < 640) return 1      // mobile
+    if (window.innerWidth < 1024) return 2     // tablet
+    return 3                                   // desktop
+  }
   const [selectedCategory, setSelectedCategory] = useState(bookingData.serviceCategory || '')
   const [selectedService, setSelectedService] = useState(bookingData.service || '')
   const [showDescription, setShowDescription] = useState<string | null>(null)
   const [currentIndex, setCurrentIndex] = useState(0)
   const carouselRef = useRef<HTMLDivElement>(null)
 
-  const itemsPerView = 3 // Number of categories visible at once
+  const [itemsPerView, setItemsPerView] = useState(getItemsPerView())
   const maxIndex = Math.max(0, serviceCategories.length - itemsPerView)
 
   const handlePrevious = () => {
@@ -97,6 +103,16 @@ export default function ServiceSelectionStep({
     toast.success('Service selected! 🎯')
     nextStep()
   }
+
+  useEffect(() => {
+    const handleResize = () => {
+      setItemsPerView(getItemsPerView())
+      setCurrentIndex(0) // reset position on resize
+    }
+  
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   return (
     <motion.div
@@ -132,10 +148,10 @@ export default function ServiceSelectionStep({
           </button>
 
           {/* Carousel Container */}
-          <div className="overflow-hidden px-[20px]">
+          <div className="overflow-hidden md:px-[20px]">
             <motion.div
               ref={carouselRef}
-              className="flex gap-4 p-[20px]"
+              className="flex md:gap-4 md:p-[20px]"
               animate={{
                 x: `-${currentIndex * (100 / itemsPerView)}%`,
               }}

@@ -11,13 +11,19 @@ interface InvoiceStepProps {
 }
 
 export default function InvoiceStep({ bookingData, prevStep }: InvoiceStepProps) {
+  const selectedDate =
+    bookingData.selectedDate instanceof Date
+      ? bookingData.selectedDate
+      : bookingData.selectedDate
+        ? new Date(bookingData.selectedDate)
+        : null;
   const serviceFee = 0.77
   const tax = 0.77
   const discount = 0
   const total = (bookingData.price || 0) + serviceFee + tax - discount
 
   const handleConfirm = () => {
-    toast.success('🎉 Booking confirmed! You will receive a confirmation email shortly.')
+    toast.success('🎉 Booking confirmed!')
     // Here you would typically send the booking data to your backend
     console.log('Booking Data:', bookingData)
   }
@@ -43,7 +49,7 @@ export default function InvoiceStep({ bookingData, prevStep }: InvoiceStepProps)
       </div>
 
       <div className="bg-gradient-to-br from-primary-50 to-purple-50 p-6 rounded-xl border border-primary-200">
-        <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+        <h3 className="text-lg font-bold !text-gray-800 mb-4 flex items-center gap-2">
           <User size={20} className="text-" />
           Customer Information
         </h3>
@@ -66,14 +72,14 @@ export default function InvoiceStep({ bookingData, prevStep }: InvoiceStepProps)
       </div>
 
       <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-        <h3 className="text-lg font-bold text-gray-800 mb-4">Appointment Details</h3>
+        <h3 className="text-lg font-bold !text-gray-800 mb-4">Appointment Details</h3>
         <div className="space-y-3">
           <div className="flex items-start gap-3">
             <Calendar className="text-primary-600 mt-1" size={20} />
             <div>
               <p className="text-sm text-gray-600">Date & Time</p>
               <p className="font-semibold text-gray-800">
-                {bookingData.selectedDate?.toLocaleDateString('en-US', {
+                {selectedDate?.toLocaleDateString('en-US', {
                   weekday: 'long',
                   year: 'numeric',
                   month: 'long',
@@ -96,7 +102,7 @@ export default function InvoiceStep({ bookingData, prevStep }: InvoiceStepProps)
       </div>
 
       <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-        <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+        <h3 className="text-lg font-bold !text-gray-800 mb-4 flex items-center gap-2">
           <DollarSign size={20} className="text-green-600" />
           Invoice
         </h3>
@@ -134,7 +140,7 @@ export default function InvoiceStep({ bookingData, prevStep }: InvoiceStepProps)
         className="p-4 bg-green-50 rounded-xl border border-green-200"
       >
         <p className="text-sm text-green-800 text-center">
-          ✅ <strong>Reservation confirmed!</strong> You will receive a confirmation email shortly.
+          ✅ <strong>Reservation confirmed!</strong>
         </p>
       </motion.div>
 
@@ -156,8 +162,7 @@ export default function InvoiceStep({ bookingData, prevStep }: InvoiceStepProps)
           whileTap={{ scale: 0.98 }}
           className="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white py-4 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2"
         >
-          <CheckCircle size={20} />
-          Confirm Booking
+          Confirm
         </motion.button>
       </div>
     </motion.div>

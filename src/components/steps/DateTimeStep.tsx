@@ -25,7 +25,11 @@ export default function DateTimeStep({
   nextStep,
   prevStep,
 }: DateTimeStepProps) {
-  const [selectedDate, setSelectedDate] = useState<Date | null>(bookingData.selectedDate || null)
+  const [selectedDate, setSelectedDate] = useState<Date | null>(
+    bookingData.selectedDate
+      ? new Date(bookingData.selectedDate)
+      : null
+  )
   const [selectedTime, setSelectedTime] = useState(bookingData.selectedTime || '')
 
   // Simple calendar generation

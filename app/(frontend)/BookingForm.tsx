@@ -192,7 +192,7 @@ export default function BookingForm() {
           transition={{ delay: 0.5 }}
           className="text-center mt-6 text-white text-sm"
         >
-          © 2024 PawLoyalty.com. All rights reserved
+          © 2024 amandaeverythingpets All rights reserved
         </motion.div>
       </div>
     </div>

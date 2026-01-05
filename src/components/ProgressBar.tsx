@@ -69,7 +69,7 @@ export default function ProgressBar({ currentStep, totalSteps, isRegistered = fa
                 >
                   {isCompleted ? <Check size={20} /> : stepNumber}
                 </div>
-                <span className="text-xs text-white mt-2 font-medium">
+                <span className="text-xs dark:text-white text-black mt-2 font-medium">
                   {getStepLabel(stepNumber)}
                 </span>
               </motion.div>
