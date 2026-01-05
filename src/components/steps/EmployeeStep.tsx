@@ -107,27 +107,9 @@ export default function EmployeeStep({
                 />
                 <div className="flex-1">
                   <h3 className="text-xl font-bold !text-[var(--primary-theme)]">{employee.name}</h3>
-                  <p className="text-sm text-gray-600 mb-2">{employee.title}</p>
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="flex items-center gap-1">
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <Star
-                          key={i}
-                          size={14}
-                          className={`${
-                            i < Math.floor(employee.rating)
-                              ? 'fill-yellow-400 text-yellow-400'
-                              : 'text-gray-300'
-                          }`}
-                        />
-                      ))}
-                    </div>
-                    <span className="text-sm text-gray-600">
-                      {employee.rating} ({employee.reviews} reviews)
-                    </span>
-                  </div>
+                  <p className="text-sm text-gray-600 mb-2">Services</p>
                   <p className="text-sm text-primary-600 font-medium">
-                    🎯 {employee.specialty}
+                    {employee.specialty}
                   </p>
                 </div>
                 {isSelected && (
