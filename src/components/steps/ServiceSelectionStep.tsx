@@ -14,44 +14,14 @@ interface ServiceSelectionStepProps {
 }
 
 const serviceCategories = [
-  { id: 'grooming', name: 'Grooming Services', icon: Scissors, color: 'from-pink-400 to-pink-600', bg: 'bg-pink-50' },
-  { id: 'spa', name: 'Spa Services', icon: Sparkles, color: 'from-purple-400 to-purple-600', bg: 'bg-purple-50' },
-  { id: 'wellness', name: 'Wellness Services', icon: Heart, color: 'from-blue-400 to-blue-600', bg: 'bg-blue-50' },
-  { id: 'training', name: 'Training Services', icon: Heart, color: 'from-green-400 to-green-600', bg: 'bg-green-50' },
-  { id: 'boarding', name: 'Boarding Services', icon: Sparkles, color: 'from-orange-400 to-orange-600', bg: 'bg-orange-50' },
-  { id: 'daycare', name: 'Day Care', icon: Scissors, color: 'from-cyan-400 to-cyan-600', bg: 'bg-cyan-50' },
+  { id: 'dogWalk', name: 'Dog Walk', icon: Sparkles, color: 'from-purple-400 to-purple-600', bg: 'bg-purple-50' },
 ]
 
 const services: Record<string, Array<{ id: string; name: string; price: number; duration: string; description: string }>> = {
-  grooming: [
-    { id: 'basic-groom', name: 'Basic Grooming', price: 45, duration: '1 hour', description: 'Bath, brush, and nail trim' },
-    { id: 'full-groom', name: 'Full Grooming', price: 75, duration: '2 hours', description: 'Complete grooming package' },
-    { id: 'haircut', name: 'Haircut & Styling', price: 60, duration: '1.5 hours', description: 'Professional styling' },
-  ],
-  spa: [
-    { id: 'shave-down', name: 'Shave Down', price: 22, duration: '30 min', description: 'Complete shave service' },
-    { id: 'spa-package', name: 'Spa Package', price: 95, duration: '2.5 hours', description: 'Luxury spa treatment' },
-    { id: 'teeth-cleaning', name: 'Teeth Cleaning', price: 35, duration: '45 min', description: 'Dental care service' },
-  ],
-  wellness: [
-    { id: 'nail-trim', name: 'Nail Trim', price: 15, duration: '15 min', description: 'Quick nail trimming' },
-    { id: 'ear-cleaning', name: 'Ear Cleaning', price: 20, duration: '20 min', description: 'Gentle ear care' },
-    { id: 'flea-treatment', name: 'Flea Treatment', price: 30, duration: '30 min', description: 'Flea prevention' },
-  ],
-  training: [
-    { id: 'basic-obedience', name: 'Basic Obedience', price: 80, duration: '1 hour', description: 'Essential commands training' },
-    { id: 'advanced-training', name: 'Advanced Training', price: 120, duration: '1.5 hours', description: 'Advanced behavior training' },
-    { id: 'puppy-class', name: 'Puppy Class', price: 65, duration: '1 hour', description: 'Socialization for puppies' },
-  ],
-  boarding: [
-    { id: 'standard-boarding', name: 'Standard Boarding', price: 45, duration: 'Per night', description: 'Comfortable overnight stay' },
-    { id: 'luxury-suite', name: 'Luxury Suite', price: 85, duration: 'Per night', description: 'Premium boarding experience' },
-    { id: 'extended-stay', name: 'Extended Stay', price: 200, duration: 'Per week', description: 'Week-long boarding package' },
-  ],
-  daycare: [
-    { id: 'half-day', name: 'Half Day Care', price: 25, duration: '4 hours', description: 'Morning or afternoon care' },
-    { id: 'full-day', name: 'Full Day Care', price: 40, duration: '8 hours', description: 'All-day supervised play' },
-    { id: 'weekly-pass', name: 'Weekly Pass', price: 150, duration: '5 days', description: 'Unlimited daycare access' },
+  dogWalk: [
+    { id: 'basic-groom', name: 'Dog Walk', price: 45, duration: '15 Min AM', description: '' },
+    { id: 'full-groom', name: 'Dog Walk', price: 75, duration: '20 Min AM', description: '' },
+    { id: 'haircut', name: 'Dog Walk', price: 90, duration: '30 Min AM', description: '' },
   ],
 }
 
@@ -67,7 +37,9 @@ export default function ServiceSelectionStep({
     if (window.innerWidth < 1024) return 2     // tablet
     return 3                                   // desktop
   }
-  const [selectedCategory, setSelectedCategory] = useState(bookingData.serviceCategory || '')
+  const [selectedCategory, setSelectedCategory] = useState(
+    bookingData.serviceCategory || serviceCategories[0].id
+  )
   const [selectedService, setSelectedService] = useState(bookingData.service || '')
   const [showDescription, setShowDescription] = useState<string | null>(null)
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -151,7 +123,7 @@ export default function ServiceSelectionStep({
           <div className="overflow-hidden md:px-[20px]">
             <motion.div
               ref={carouselRef}
-              className="flex md:gap-4 md:p-[20px]"
+              className="flex md:gap-4 md:p-[20px] justify-center"
               animate={{
                 x: `-${currentIndex * (100 / itemsPerView)}%`,
               }}
