@@ -5,7 +5,7 @@ import React, { ReactNode, FC } from "react";
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode;
   size?: "sm" | "md";
-  variant?: "primary" | "outline";
+  variant?: "primary" | "outline" | "secondary";
   startIcon?: ReactNode;
   endIcon?: ReactNode;
   loading?: boolean;
@@ -35,6 +35,8 @@ const Button: FC<ButtonProps> = ({
       "bg-brand-500 text-white shadow-theme-xs hover:bg-brand-600 disabled:bg-brand-300",
     outline:
       "bg-white text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-400 dark:ring-gray-700 dark:hover:bg-white/[0.03] dark:hover:text-gray-300",
+    secondary: 
+    "flex-1 bg-[var(--primary-theme)] text-white py-4 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2",
   };
 
   return (

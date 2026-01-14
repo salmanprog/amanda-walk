@@ -1,241 +1,265 @@
 "use client";
-
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import toast from "react-hot-toast";
+import Button from "@/components/ui/button/Button";
 import Input from "@/components/form/input/InputField";
-import Link from "next/link";
-import InnerBanner from "@/components/common/InnerBanner";
-import useApi, { ApiResponse } from "@/utils/useApi";
+import Select from "@/components/form/Select";
+import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from "next/navigation";
+import { KeyRound } from "lucide-react";
 
-interface SignupResponse {
-  [key: string]: string;
-}
 
-export default function SignUpPage() {
+
+
+export default function SignUpForm() {
   const router = useRouter();
-  useEffect(() => {
-    document.title = "My Waldo | Sign Up";
-  }, []);
-
-  useEffect(() => {
-    const token = localStorage.getItem("token") || document.cookie.split(';').find(c => c.trim().startsWith('token='))?.split('=')[1];
-    if (token) {
-      router.push("/");
-    }
-  }, [router]);
   const [form, setForm] = useState({
     name: "",
-    lname: "",
     email: "",
     mobileNumber: "",
+    streetAddress: "",
+    city: "",
+    state: "",
+    postalCode: "",
+    country: "",
+    emergencyContactName: "",
+    emergencyContactPhone: "",
+    refered: "",
+    vetName: "",
     password: "",
-    confirmPassword: "",
+    password_confirmation: "",
   });
 
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [errorMsg, setErrorMsg] = useState("");
-  const [successMsg, setSuccessMsg] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const refferedOptions = [
+    { value: "currentcustomer", label: "Current Customer" },
+    { value: "google", label: "Google" },
+    { value: "localvet", label: "Local vet" },
+  ];
 
-  const { sendData, loading } = useApi({
-    url: "/api/users",
-    type: "manual",
-    requiresAuth: false,
-  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
-
-    if (errors[e.target.name]) {
-      setErrors({ ...errors, [e.target.name]: "" });
-    }
   };
 
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-
-    if (!form.name.trim()) newErrors.name = "First name is required";
-    if (!form.lname.trim()) newErrors.lname = "Last name is required";
-    if (!form.email.trim()) newErrors.email = "Email is required";
-
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-      newErrors.email = "Invalid email format";
-    }
-
-    if (!form.mobileNumber.trim()) newErrors.mobileNumber = "Phone is required";
-
-    if (!form.password) newErrors.password = "Password is required";
-    if (form.password.length < 6)
-      newErrors.password = "Password must be at least 6 characters";
-
-    if (!form.confirmPassword)
-      newErrors.confirmPassword = "Please confirm password";
-
-    if (form.confirmPassword !== form.password)
-      newErrors.confirmPassword = "Passwords do not match";
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+  const handleSelectChange = (name: string, value: string) => {
+    setForm({
+      ...form,
+      [name]: value,
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMsg("");
-    setSuccessMsg("");
-
-    if (!validateForm()) return;
+    setLoading(true);
+    setError(null);
 
     try {
-      const fd = new FormData();
-      fd.append("name", form.name);
-      fd.append("email", form.email);
-      fd.append("lname", form.lname);
-      fd.append("mobileNumber", form.mobileNumber);
-      fd.append("password", form.password);
+      console.log(form);
 
-      const res = await sendData<ApiResponse<SignupResponse>>(fd, undefined, "POST");
+      await new Promise((res) => setTimeout(res, 1200));
 
-        if (res.code === 200) {
-            setSuccessMsg("Thanks for registering! Please login with your credentials.");
-        }
-
-        else if (res.code === 422) {
-        setErrors(res.data ?? {});        // ✔ TS Safe
-        setErrorMsg(res.message || "Validation failed");
-        }
-
-        else {
-        setErrorMsg(res.message || "Something went wrong.");
-        }
-    } catch (err: any) {
-      setErrorMsg(err?.message || "Server error. Try again.");
+      toast.success("Account created successfully");
+      router.push("/");
+    } catch (err) {
+      setError("Something went wrong");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <>
-      <InnerBanner title="Signup" bannerClass="signup-banner auth-banner" />
-
-      <section className="py-20">
-        <div className="container">
-          <div className="max-w-[40rem] mx-auto">
-            <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-200">
-              <h2 className="text-3xl font-bold text-center mb-2">
-                Create Your Account
-              </h2>
-
-              <form onSubmit={handleSubmit} className="space-y-5">
-                {successMsg && (
-                        <div className="bg-green-100 text-green-700 p-3 rounded-md text-sm font-medium mb-3">
-                            {successMsg}
-                        </div>
-                    )}
-                {errorMsg && (
-                        <div className="text-sm text-red-500 font-medium mb-3">{errorMsg}</div>
-                    )}
-                    {Object.values(errors).length > 0 && (
-                        <div className="bg-red-100 text-red-700 p-3 rounded-md text-sm space-y-1 mb-4">
-                        {Object.values(errors).map((err, idx) => (
-                            <div key={idx}>• {err}</div>
-                        ))}
-                        </div>
-                )}
-
-                <Input
-                  name="name"
-                  placeholder="First Name"
-                  value={form.name}
-                  onChange={handleChange}
-                  error={!!errors.name}
-                  hint={errors.name}
-                />
-
-                <Input
-                  name="lname"
-                  placeholder="Last Name"
-                  value={form.lname}
-                  onChange={handleChange}
-                  error={!!errors.lname}
-                  hint={errors.lname}
-                />
-
-
-                <Input
-                  name="email"
-                  type="email"
-                  placeholder="Email"
-                  value={form.email}
-                  onChange={handleChange}
-                  error={!!errors.email}
-                  hint={errors.email}
-                />
-
-                <Input
-                  name="mobileNumber"
-                  type="tel"
-                  placeholder="Mobile Number"
-                  value={form.mobileNumber}
-                  onChange={handleChange}
-                  error={!!errors.mobileNumber}
-                  hint={errors.mobileNumber}
-                />
-
-                <div className="relative">
-                  <Input
-                    type={showPassword ? "text" : "password"}
-                    name="password"
-                    placeholder="Password"
-                    value={form.password}
-                    onChange={handleChange}
-                    error={!!errors.password}
-                    hint={errors.password}
-                  />
-                  <span
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer"
-                  >
-                    👁️
-                  </span>
-                </div>
-
-                <div className="relative">
-                  <Input
-                    type={showConfirmPassword ? "text" : "password"}
-                    name="confirmPassword"
-                    placeholder="Confirm Password"
-                    value={form.confirmPassword}
-                    onChange={handleChange}
-                    error={!!errors.confirmPassword}
-                    hint={errors.confirmPassword}
-                  />
-                  <span
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer"
-                  >
-                    👁️
-                  </span>
-                </div>
-
-                <button
-                  type="submit"
-                  className="btn btn-primary w-full"
-                  disabled={loading}
-                >
-                  {loading ? "Processing..." : "Sign Up"}
-                </button>
-
-                <p className="text-center text-sm text-gray-600 mt-6">
-                  Already have an account?{" "}
-                  <Link href="/login" className="text-blue-700 font-semibold">
-                    Sign In
-                  </Link>
-                </p>
-              </form>
+    <motion.div
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="glass-effect rounded-2xl shadow-2xl p-6 mb-6">
+      <div className="">
+        <div className="text-center mb-10">
+          <div className="mx-auto w-16 h-16 bg-[var(--primary-theme)] rounded-full flex items-center justify-center mb-4 shadow-lg">
+            <KeyRound className="text-white" size={32} />
+          </div>
+          <h1 className="text-3xl font-bold text-center mb-6 gradient-text">
+            Sign Up
+          </h1>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="">
+              <label className="block text-sm font-medium mb-1">
+                Name
+              </label>
+              <Input
+                type="text"
+                name="email"
+                required
+                value={form.name}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="">
+              <label className="block text-sm font-medium mb-1">
+                Email
+              </label>
+              <Input
+                type="email"
+                name="email"
+                required
+                value={form.email}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="">
+              <label className="block text-sm font-medium mb-1">
+                Emergency Contact Name
+              </label>
+              <Input
+                type="text"
+                name="emergencyContactName"
+                required
+                value={form.emergencyContactName}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="">
+              <label className="block text-sm font-medium mb-1">
+                Emergency Contact Phone
+              </label>
+              <Input
+                type="text"
+                name="emergencyContactPhone"
+                required
+                value={form.emergencyContactPhone}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="">
+              <label className="block text-sm font-medium mb-1">
+                Mobile Number
+              </label>
+              <Input
+                type="text"
+                name="mobileNumber"
+                required
+                value={form.mobileNumber}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="">
+              <label className="block text-sm font-medium mb-1">
+                Country
+              </label>
+              <Input
+                type="text"
+                name="country"
+                required
+                value={form.country}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="">
+              <label className="block text-sm font-medium mb-1">
+                State
+              </label>
+              <Input
+                type="text"
+                name="state"
+                required
+                value={form.state}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="">
+              <label className="block text-sm font-medium mb-1">
+                City
+              </label>
+              <Input
+                type="text"
+                name="city"
+                required
+                value={form.city}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="">
+              <label className="block text-sm font-medium mb-1">
+                Postal Code
+              </label>
+              <Input
+                type="text"
+                name="postalCode"
+                required
+                value={form.postalCode}
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Street Address
+              </label>
+              <Input
+                type="text"
+                name="streetAddress"
+                required
+                value={form.streetAddress}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="">
+              <label className="block text-sm font-medium mb-1">
+                Select Reffered
+              </label>
+              <Select
+                options={refferedOptions}
+                placeholder="Select Referred"
+                value={form.refered}
+                onChange={(value) => handleSelectChange("refered", value)}
+              />
+            </div>
+            <div className="">
+              <label className="block text-sm font-medium mb-1">
+                Vet Name
+              </label>
+              <Input
+                type="text"
+                name="vetName"
+                required
+                value={form.vetName}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="">
+              <label className="block text-sm font-medium mb-1">
+                Password
+              </label>
+              <Input
+                type="password"
+                name="password"
+                required
+                value={form.password}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="">
+              <label className="block text-sm font-medium mb-1">
+                Confirm Password
+              </label>
+              <Input
+                type="password"
+                name="password"
+                required
+                value={form.password}
+                onChange={handleChange}
+              />
             </div>
           </div>
-        </div>
-      </section>
-    </>
-  );
+
+          <Button variant="secondary" className="w-full" type="submit" loading={loading}>
+            Sign Up
+          </Button>
+        </form>
+      </div>
+    </motion.div>
+
+  )
 }

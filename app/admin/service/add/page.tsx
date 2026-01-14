@@ -125,7 +125,7 @@ export default function AddService() {
               <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                 Service Category <span className="text-red-500">*</span>
               </label>  
-              <Select placeholder="Select service category" defaultValue={serviceCategoryId?.toString() || ""}
+              <Select placeholder="Select service category" value={serviceCategoryId?.toString() || ""}
                   options={serviceCategories?.map((category: any) => ({
                     value: category.id.toString(),
                     label: category.title,
