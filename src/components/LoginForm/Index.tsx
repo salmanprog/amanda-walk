@@ -1,105 +1,132 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Button from "@/components/ui/button/Button";
 import Input from "@/components/form/input/InputField";
 import toast from "react-hot-toast";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { KeyRound } from "lucide-react";
+import useApi, { ApiResponse } from "@/utils/useApi";
 
-
+interface LoginResponse {
+  apiTokens?: { apiToken: string }[];
+  message?: string;
+}
 
 export default function LoginForm() {
-    const [form, setForm] = useState({
-        email: "",
-        password: "",
-    });
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const router = useRouter();
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setForm({ ...form, [e.target.name]: e.target.value });
-    };
+  const router = useRouter();
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+  useEffect(() => {
+    const token = localStorage.getItem("token") || document.cookie.split(';').find(c => c.trim().startsWith('token='))?.split('=')[1];
+    if (token) {
+      router.push("/add-pets");
+    }
+  }, [router]);
 
-        if (!form.email || !form.password) {
-            toast.error("Email and password are required");
-            return;
-        }
-        setLoading(true);
-        setError(null);
+  const [form, setForm] = useState({
+    email: "",
+    password: "",
+  });
 
-        try {
-            console.log(form.email, form.password);
+  const [errorMsg, setErrorMsg] = useState("");
 
-            await new Promise((res) => setTimeout(res, 1000));
+  const { sendData, loading } = useApi({
+    url: "/api/users/login",
+    type: "manual",
+    requiresAuth: false,
+  });
 
-            toast.success("Login successful");
-            router.push("/add-pets");
-        } catch (err) {
-            setError("Invalid credentials");
-        } finally {
-            setLoading(false);
-        }
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+    if (errorMsg) setErrorMsg("");
+  };
 
-    };
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg("");
 
-    return (
-        <div className="">
-            <div className="text-center mb-10">
-                <div className="mx-auto w-16 h-16 bg-[var(--primary-theme)] rounded-full flex items-center justify-center mb-4 shadow-lg">
-                    <KeyRound className="text-white" size={32} />
-                </div>
-                <h1 className="text-3xl font-bold text-center mb-6 gradient-text">
-                    Login
-                </h1>
-            </div>
+    try {
+      const fd = new FormData();
+      fd.append("email", form.email);
+      fd.append("password", form.password);
 
-            {error && (
-                <div className="mb-4 text-red-600 text-sm">
-                    {error}
-                </div>
-            )}
+      const res = await sendData<ApiResponse<LoginResponse>>(fd, undefined, "POST");
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                    <label className="block text-sm font-medium mb-1">
-                        Email
-                    </label>
-                    <Input
-                        type="email"
-                        name="email"
-                        required
-                        value={form.email}
-                        onChange={handleChange}
-                    />
-                </div>
+      if (res.code === 200 && res.data?.apiTokens?.[0]?.apiToken) {
+        const token = res.data.apiTokens[0].apiToken;
+        localStorage.setItem("token", token);
 
-                <div>
-                    <label className="block text-sm font-medium mb-1">
-                        Password
-                    </label>
-                    <Input
-                        type="password"
-                        name="password"
-                        required
-                        value={form.password}
-                        onChange={handleChange}
-                    />
-                </div>
-                <Button variant="secondary" className="w-full" type="submit" loading={loading}>
-                    Login
-                </Button>
-                <div className="flex gap-2">
-                    <span>Don't have an Account</span>
-                    <Link href="/signup" className="gradient-text font-bold">
-                        SignUp
-                    </Link>
-                </div>
-            </form>
+        toast.success("Login successful");
+        // router.replace("/add-pets");
+        // router.refresh();
+        window.location.href = "/add-pets";
+      } else {
+        setErrorMsg(res.message || "Credentials do not match our records.");
+      }
+    } catch (err: any) {
+      setErrorMsg(err?.message || "Something went wrong. Please try again.");
+    }
+  };
+
+  return (
+    <div>
+      <div className="text-center mb-10">
+        <div className="mx-auto w-16 h-16 bg-[var(--primary-theme)] rounded-full flex items-center justify-center mb-4 shadow-lg">
+          <KeyRound className="text-white" size={32} />
         </div>
-    );
+        <h1 className="text-3xl font-bold mb-6 gradient-text">
+          Login
+        </h1>
+      </div>
+
+      {errorMsg && (
+        <div className="mb-4 text-red-600 text-sm font-medium">
+          {errorMsg}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium mb-1">
+            Email
+          </label>
+          <Input
+            type="email"
+            name="email"
+            value={form.email}
+            onChange={handleChange}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">
+            Password
+          </label>
+          <Input
+            type="password"
+            name="password"
+            value={form.password}
+            onChange={handleChange}
+          />
+        </div>
+
+        <Button
+          variant="secondary"
+          className="w-full"
+          type="submit"
+          loading={loading}
+        >
+          {loading ? "Signing in..." : "Login"}
+        </Button>
+
+        <div className="flex gap-2 text-sm">
+          <span>Don't have an account?</span>
+          <Link href="/signup" className="gradient-text font-bold">
+            Sign Up
+          </Link>
+        </div>
+      </form>
+    </div>
+  );
 }

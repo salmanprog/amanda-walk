@@ -4,6 +4,10 @@ import Header from '@/components/common/Header';
 import { Phone, MapPin } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion';
 import "react-datepicker/dist/react-datepicker.css";
+import Button from "@/components/ui/button/Button";
+import { useState, useCallback } from "react";
+import { useCurrentUser } from "@/utils/currentUser";
+
 
 import { Toaster } from 'react-hot-toast';
 
@@ -12,6 +16,20 @@ export default function FrontendLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const [loading, setLoading] = useState(false);
+  const { user, loadingUser } = useCurrentUser();
+  const logout = useCallback(() => {
+    // Clear cookie
+    document.cookie = "token=; path=/; max-age=0";
+    // Clear localStorage
+    localStorage.removeItem("token");
+    localStorage.clear();
+    // Clear sessionStorage as well
+    sessionStorage.removeItem("token");
+    sessionStorage.clear();
+    // Reload page to reset state
+    window.location.href = "/";
+}, []);
   // Render normal frontend layout with Header/Footer for all routes
   return (
     <div className='min-h-screen flex items-center justify-center p-4'>
@@ -37,22 +55,39 @@ export default function FrontendLayout({
                 </div>
               </div>
             </div>
+            {loadingUser ? (
+                  <span className="text-sm text-gray-600">Loading...</span>
+                ) : user ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#475467]">Welcome {user.name}</span>
+                    <Button
+                      onClick={logout}
+                      variant="secondary"
+                      className="bg-transparent shadow-none !p-0 gradient-text logout-btn"
+                      type="button"
+                      loading={loading}
+                    >
+                      Logout
+                    </Button>
+                  </div>
+                ) : null}
           </div>
+
         </motion.div>
-          <main>{children}
-            <Toaster
-              position="top-right"
-              reverseOrder={false}
-              toastOptions={{
-                duration: 4000,
-                style: {
-                  borderRadius: "12px",
-                  background: "#111",
-                  color: "#fff",
-                },
-              }}
-            />
-          </main>
+        <main>{children}
+          <Toaster
+            position="top-right"
+            reverseOrder={false}
+            toastOptions={{
+              duration: 4000,
+              style: {
+                borderRadius: "12px",
+                background: "#111",
+                color: "#fff",
+              },
+            }}
+          />
+        </main>
       </div>
     </div>
   );

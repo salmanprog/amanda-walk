@@ -53,7 +53,7 @@ export default class UsersController extends RestController<
     if (email) {
       const existing = await prisma.user.findUnique({ where: { email } });
       if (existing) {
-        return this.sendError("Validation failed", { email: "Email already exists" }, 422);
+        return this.sendError("Validation failed", { email: "Email already exists" }, 400);
       }
     }
 

@@ -241,6 +241,7 @@ model ServiceCategory {
   // One category has many services
   services Services[]
   bookings Booking[]
+  schedules    BookingSchedule[]
 
   @@index([title])
   @@map("services_categories")
@@ -266,7 +267,7 @@ model Services {
   user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   category ServiceCategory @relation(fields: [servicesCategoryId], references: [id], onDelete: Cascade)
   bookings Booking[]
-
+  schedules    BookingSchedule[]
   @@index([userId])
   @@index([servicesCategoryId])
   @@map("services")
@@ -315,7 +316,9 @@ model BookingSchedule {
 
   bookingId  Int
   employeeId Int
-
+  petId Int
+  serviceCategoryId Int
+  serviceId         Int
   scheduleDate DateTime @db.Date
   scheduleTime String   @db.VarChar(20)
 
@@ -329,6 +332,9 @@ model BookingSchedule {
   // Relations
   booking  Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   employee User    @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  pet      Pet     @relation(fields: [petId], references: [id], onDelete: Cascade)
+  category     ServiceCategory   @relation(fields: [serviceCategoryId], references: [id], onDelete: Cascade)
+  service      Services          @relation(fields: [serviceId], references: [id], onDelete: Cascade)
 
   @@index([bookingId])
   @@index([employeeId])
@@ -379,7 +385,8 @@ model Pet {
   // Relations
   user     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   petType  PetType @relation(fields: [petTypeId], references: [id], onDelete: Cascade)
-
+  schedules    BookingSchedule[]
+  
   @@index([userId])
   @@index([petTypeId])
   @@index([name])

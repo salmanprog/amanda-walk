@@ -46,7 +46,7 @@ export const changePassword = yup.object({
   newPassword: yup.string().min(6).max(100).required("New password is required"),
   confirmPassword: yup.string()
     .required("Please confirm your password")
-    .oneOf([yup.ref("newPassword")], "Passwords must match"),
+    .oneOf([yup.ref("newPassword")], "Passwords must match"), 
 });
 
 export const storeUserAddress = yup.object({
@@ -185,7 +185,6 @@ export const storePet = yup.object({
   breed: yup.string().required("Breed is required"),
   weight: yup.string().required("Weight is required"),
   color: yup.string().required("Color is required"),
-  notes: yup.string().required("Notes is required"),
 });
 
 export const updatePet = yup.object({
@@ -196,5 +195,4 @@ export const updatePet = yup.object({
   breed: yup.string().required("Breed is required"),
   weight: yup.string().required("Weight is required"),
   color: yup.string().required("Color is required"),
-  notes: yup.string().required("Notes is required"),
 });

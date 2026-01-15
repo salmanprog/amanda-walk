@@ -46,7 +46,7 @@ export default class AdminController extends RestController<
     const id = this.getRouteParam();
     
     // If no route param (e.g., profile route), allow access to own profile
-    // The show() method will be called with the user's ID directly
+    // The show() method will be called with the user's ID directly my-secret-key-16
     if (!id || id === "") {
       return; // Allow access when no route param (profile endpoint)
     }

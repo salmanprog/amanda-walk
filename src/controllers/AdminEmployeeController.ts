@@ -296,4 +296,69 @@ export default class AdminEmployeeController extends RestController<
       return this.sendError((err as Error).message, {}, 500);
     }
   }
+
+  async bookingSchedule(): Promise<NextResponse> {
+    try {
+      const currentUser = this.requireUser();
+      this.resource = null;
+  
+      if (!this.__request?.url) {
+        return this.sendError("Invalid request", {}, 400);
+      }
+  
+      const url = new URL(this.__request.url);
+      const bookingDate = url.searchParams.get("date");
+  
+      if (!bookingDate) {
+        return this.sendError(
+          "Validation failed",
+          { date: "Date query param is required" },
+          422
+        );
+      }
+      const bookedSchedules = await prisma.bookingSchedule.findMany({
+        where: {
+          employeeId: Number(currentUser.id),
+          scheduleDate: new Date(bookingDate),
+          deletedAt: null,
+        },
+        select: {
+          scheduleTime: true,
+        },
+      });
+      const bookedTimes = bookedSchedules.map(b => b.scheduleTime);
+      const startMinutes = 8 * 60;
+      const endMinutes = 20 * 60;
+      const gap = 30;
+  
+      const schedule: {
+        time: string;
+        is_book: boolean;
+      }[] = [];
+  
+      for (let mins = startMinutes; mins <= endMinutes; mins += gap) {
+        const h = Math.floor(mins / 60);
+        const m = mins % 60;
+  
+        const ampm = h >= 12 ? "PM" : "AM";
+        const hour = h % 12 || 12;
+  
+        const time = `${hour.toString().padStart(2, "0")}:${m
+          .toString()
+          .padStart(2, "0")} ${ampm}`;
+  
+        schedule.push({
+          time,
+          is_book: bookedTimes.includes(time),
+        });
+      }
+      return this.__sendResponse(200, "Booking schedule fetched successfully", {
+        booking_date: bookingDate,
+        schedule,
+      });
+    } catch (err) {
+      return this.sendError((err as Error).message, {}, 500);
+    }
+  }
+  
 }

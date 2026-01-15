@@ -263,6 +263,9 @@ CREATE TABLE `booking_schedules` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `bookingId` INTEGER NOT NULL,
     `employeeId` INTEGER NOT NULL,
+    `petId` INTEGER NOT NULL,
+    `serviceCategoryId` INTEGER NOT NULL,
+    `serviceId` INTEGER NOT NULL,
     `scheduleDate` DATE NOT NULL,
     `scheduleTime` VARCHAR(20) NOT NULL,
     `isStarted` BOOLEAN NOT NULL DEFAULT false,
@@ -362,6 +365,15 @@ ALTER TABLE `booking_schedules` ADD CONSTRAINT `booking_schedules_bookingId_fkey
 
 -- AddForeignKey
 ALTER TABLE `booking_schedules` ADD CONSTRAINT `booking_schedules_employeeId_fkey` FOREIGN KEY (`employeeId`) REFERENCES `User`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `booking_schedules` ADD CONSTRAINT `booking_schedules_petId_fkey` FOREIGN KEY (`petId`) REFERENCES `pets`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `booking_schedules` ADD CONSTRAINT `booking_schedules_serviceCategoryId_fkey` FOREIGN KEY (`serviceCategoryId`) REFERENCES `services_categories`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `booking_schedules` ADD CONSTRAINT `booking_schedules_serviceId_fkey` FOREIGN KEY (`serviceId`) REFERENCES `services`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `pets` ADD CONSTRAINT `pets_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Button from "@/components/ui/button/Button";
 import Input from "@/components/form/input/InputField";
 import toast from "react-hot-toast";
@@ -8,10 +8,10 @@ import Link from "next/link";
 import { motion, AnimatePresence } from 'framer-motion';
 import Select from "@/components/form/Select";
 import DatePicker from "react-datepicker";
-import { usePetsStore } from "@/store/petsStore";
-import { PawPrint } from "lucide-react";
+import { PawPrint, Edit, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-
+import useApi, { ApiResponse } from "@/utils/useApi";
+import useAuthGuard from "@/hooks/useAuthGuard";
 
 interface FormState {
     petName: string;
@@ -22,11 +22,67 @@ interface FormState {
     petType: string;
 }
 
+interface PetFromApi {
+    id: number;
+    name: string;
+    gender: string;
+    breed: string;
+    weight: string;
+    color: string;
+    dob: string;
+    slug: string;
+    petTypeId?: number;
+}
 
 export default function AddPets() {
-    const { pets, addPet, removePet } = usePetsStore();
+    useAuthGuard();
     const [startDate, setStartDate] = useState<Date | null>(null);
+    const [pets, setPets] = useState<PetFromApi[]>([]);
+    const [loadingPets, setLoadingPets] = useState(false);
+    const [editingPet, setEditingPet] = useState<PetFromApi | null>(null);
+    const [deletingPetId, setDeletingPetId] = useState<number | null>(null);
     const router = useRouter();
+
+    const { sendData, loading: apiLoading } = useApi({
+        url: "/api/users/pet",
+        type: "manual",
+        requiresAuth: true,
+    });
+
+    const { fetchApi: fetchPets } = useApi({
+        url: "/api/users/pet",
+        method: "GET",
+        type: "manual",
+        requiresAuth: true,
+    });
+
+    // Helper function to make API calls with dynamic URLs
+    const makeApiCall = async (url: string, method: "POST" | "PATCH" | "DELETE", data?: any): Promise<ApiResponse> => {
+        const token = typeof window !== "undefined" 
+            ? localStorage.getItem("token") || sessionStorage.getItem("token") || ""
+            : "";
+
+        const headers: Record<string, string> = {
+            "Content-Type": "application/json",
+        };
+
+        if (token) {
+            headers["Authorization"] = `Bearer ${token}`;
+        }
+
+        const options: RequestInit = {
+            method,
+            headers,
+        };
+
+        if (data && method !== "DELETE") {
+            options.body = JSON.stringify(data);
+        }
+
+        const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "";
+        const response = await fetch(`${baseUrl}${url}`, options);
+        return await response.json() as ApiResponse;
+    };
 
     const requiredFields = [
         { key: "petName", label: "Pet Name" },
@@ -34,6 +90,7 @@ export default function AddPets() {
         { key: "petBreed", label: "Pet Breed" },
         { key: "PetWeight", label: "Pet Weight" },
         { key: "petColor", label: "Pet Color" },
+        { key: "petType", label: "Pet Type" },
     ];
     const [form, setForm] = useState<FormState>({
         petName: "",
@@ -63,11 +120,35 @@ export default function AddPets() {
         { value: "4", label: "Other" },
     ];
 
-    const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [errors, setErrors] = useState<Record<string, string>>({});
+
+    // Fetch pets from API on component mount
+    useEffect(() => {
+        const loadPets = async () => {
+            setLoadingPets(true);
+            try {
+                const res = await fetchPets();
+                if (res.code === 200 && res.data) {
+                    setPets(Array.isArray(res.data) ? res.data : []);
+                }
+            } catch (err: any) {
+                console.error("Failed to load pets:", err);
+            } finally {
+                setLoadingPets(false);
+            }
+        };
+
+        loadPets();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setForm({ ...form, [e.target.name]: e.target.value });
+        // Clear error for this field when user types
+        if (errors[e.target.name]) {
+            setErrors({ ...errors, [e.target.name]: "" });
+        }
     };
 
     const handleSelectChange = (name: string, value: string) => {
@@ -75,6 +156,44 @@ export default function AddPets() {
             ...form,
             [name]: value,
         });
+        // Clear error for this field when user selects
+        if (errors[name]) {
+            setErrors({ ...errors, [name]: "" });
+        }
+    };
+
+    // Helper function to map gender from form to API format
+    const mapGenderToApi = (gender: string): string => {
+        const genderMap: Record<string, string> = {
+            "Male": "MALE",
+            "Female": "FEMALE",
+            "MaleNeutered": "MALE",
+            "FemaleSpayed": "FEMALE",
+        };
+        return genderMap[gender] || "MALE";
+    };
+
+    // Helper function to map gender from API to form format
+    const mapGenderFromApi = (gender: string): string => {
+        if (gender === "MALE") return "Male";
+        if (gender === "FEMALE") return "Female";
+        return "Male";
+    };
+
+    // Helper function to format date as string (YYYY-MM-DD)
+    const formatDateToString = (date: Date | null): string => {
+        if (!date) return "";
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+    };
+
+    // Helper function to parse date string to Date
+    const parseDateFromString = (dateString: string): Date | null => {
+        if (!dateString) return null;
+        const date = new Date(dateString);
+        return isNaN(date.getTime()) ? null : date;
     };
 
     const validateForm = () => {
@@ -93,18 +212,90 @@ export default function AddPets() {
         return true;
     };
 
-    const handleAddPet = () => {
+    const handleAddPet = async () => {
         if (!validateForm()) return;
 
-        const newPet = {
-            id: crypto.randomUUID(),
-            ...form,
-            birthday: startDate,
-        };
+        setError(null);
+        setErrors({});
 
-        addPet(newPet);
+        try {
+            // Prepare pet data for API
+            const petData = {
+                name: form.petName,
+                petTypeId: form.petType || "1",
+                gender: mapGenderToApi(form.petGender),
+                dob: formatDateToString(startDate),
+                breed: form.petBreed,
+                weight: form.PetWeight,
+                color: form.petColor || "",
+                notes: "",
+            };
 
-        // reset form (optional but recommended)
+            let res: ApiResponse;
+
+            if (editingPet) {
+                // Update existing pet
+                res = await makeApiCall(`/api/users/pet/${editingPet.slug}`, "PATCH", petData);
+            } else {
+                // Create new pet
+                res = await sendData<ApiResponse>(petData, undefined, "POST");
+            }
+
+            if (res.code === 200) {
+                // Reset form
+                setForm({
+                    petName: "",
+                    petGender: "",
+                    petBreed: "",
+                    PetWeight: "",
+                    petColor: "",
+                    petType: "",
+                });
+                setStartDate(null);
+                setEditingPet(null);
+                setErrors({});
+
+                toast.success(editingPet ? "Pet updated successfully" : "Pet added successfully");
+
+                // Fetch updated pets list from API
+                const petsRes = await fetchPets();
+                if (petsRes.code === 200 && petsRes.data) {
+                    setPets(Array.isArray(petsRes.data) ? petsRes.data : []);
+                }
+            } else if (res.code === 400) {
+                // Handle validation errors
+                setErrors(res.data ?? {});
+                toast.error(res.message || "Validation failed");
+            } else {
+                throw new Error(res.message || editingPet ? "Failed to update pet" : "Failed to add pet");
+            }
+        } catch (err: any) {
+            const errorMessage = err?.message || (editingPet ? "Failed to update pet. Please try again." : "Failed to add pet. Please try again.");
+            setError(errorMessage);
+            toast.error(errorMessage);
+        }
+    };
+
+    const handleEditPet = (pet: PetFromApi) => {
+        setEditingPet(pet);
+        setForm({
+            petName: pet.name,
+            petGender: mapGenderFromApi(pet.gender),
+            petBreed: pet.breed,
+            PetWeight: pet.weight,
+            petColor: pet.color || "",
+            petType: String(pet.petTypeId || "1"),
+        });
+        setStartDate(parseDateFromString(pet.dob));
+        setErrors({});
+        setError(null);
+        
+        // Scroll to form
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const handleCancelEdit = () => {
+        setEditingPet(null);
         setForm({
             petName: "",
             petGender: "",
@@ -114,27 +305,49 @@ export default function AddPets() {
             petType: "",
         });
         setStartDate(null);
+        setErrors({});
+        setError(null);
+    };
 
-        toast.success("Pet added to list");
+    const handleDeletePet = async (pet: PetFromApi) => {
+        if (!confirm(`Are you sure you want to delete ${pet.name}?`)) {
+            return;
+        }
+
+        setDeletingPetId(pet.id);
+
+        try {
+            const res = await makeApiCall(`/api/users/pet/${pet.slug}`, "DELETE");
+
+            if (res.code === 200) {
+                toast.success("Pet deleted successfully");
+                
+                // Fetch updated pets list from API
+                const petsRes = await fetchPets();
+                if (petsRes.code === 200 && petsRes.data) {
+                    setPets(Array.isArray(petsRes.data) ? petsRes.data : []);
+                }
+            } else {
+                throw new Error(res.message || "Failed to delete pet");
+            }
+        } catch (err: any) {
+            toast.error(err?.message || "Failed to delete pet. Please try again.");
+        } finally {
+            setDeletingPetId(null);
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
         if (pets.length === 0) {
-            toast.error("Please add at least one pet");
+            toast.error("Please add at least one pet before continuing");
             return;
         }
 
-        setLoading(true);
-
-        try {
-            await new Promise((res) => setTimeout(res, 1000));
-            toast.success("Pet successfully added");
-            router.push("/service");
-        } finally {
-            setLoading(false);
-        }
+        // All pets are already added via API, just redirect
+        toast.success("Proceeding to service selection");
+        router.push("/service");
     };
 
 
@@ -149,13 +362,29 @@ export default function AddPets() {
                     <PawPrint className="text-white" size={32} />
                 </div>
                 <h1 className="text-3xl font-bold text-center mb-6 gradient-text">
-                    Add Pets
+                {editingPet ? "Edit" : "Add"} Pets
                 </h1>
             </div>
 
             {error && (
                 <div className="mb-4 text-red-600 text-sm">
                     {error}
+                </div>
+            )}
+
+            {/* Display validation errors for fields not in form (like notes) */}
+            {Object.keys(errors).length > 0 && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    {Object.entries(errors).map(([key, value]) => {
+                        // Only show errors for fields that don't have their own error display
+                        const hasFieldDisplay = ['name', 'gender', 'dob', 'breed', 'weight', 'color', 'petTypeId'].includes(key);
+                        if (hasFieldDisplay) return null;
+                        return (
+                            <p key={key} className="text-red-600 text-sm">
+                                {key}: {value}
+                            </p>
+                        );
+                    })}
                 </div>
             )}
 
@@ -173,7 +402,9 @@ export default function AddPets() {
                             value={form.petName}
                             onChange={handleChange}
                         />
-
+                        {errors.name && (
+                            <p className="text-red-500 text-xs mt-1">{errors.name}</p>
+                        )}
                     </div>
                     <div className="">
                         <label className="block text-sm font-medium mb-1">
@@ -185,20 +416,29 @@ export default function AddPets() {
                             value={form.petGender}
                             onChange={(value) => handleSelectChange("petGender", value)}
                         />
+                        {errors.gender && (
+                            <p className="text-red-500 text-xs mt-1">{errors.gender}</p>
+                        )}
                     </div>
                     <div>
                         <label className="block text-sm font-medium mb-1">
                             Birthday <span className="text-red-500">*</span>
                         </label>
                         <DatePicker
-
                             selected={startDate}
-                            onChange={(date: Date | null) => setStartDate(date)}
-
+                            onChange={(date: Date | null) => {
+                                setStartDate(date);
+                                if (errors.dob) {
+                                    setErrors({ ...errors, dob: "" });
+                                }
+                            }}
                             placeholderText="Select date"
                             className="w-full h-11 rounded-lg border px-4"
                             dateFormat="dd-MM-yyyy"
                         />
+                        {errors.dob && (
+                            <p className="text-red-500 text-xs mt-1">{errors.dob}</p>
+                        )}
                     </div>
                     <div>
                         <label className="block text-sm font-medium mb-1">
@@ -212,6 +452,9 @@ export default function AddPets() {
                             value={form.petBreed}
                             onChange={handleChange}
                         />
+                        {errors.breed && (
+                            <p className="text-red-500 text-xs mt-1">{errors.breed}</p>
+                        )}
                     </div>
                     <div>
                         <label className="block text-sm font-medium mb-1">
@@ -225,6 +468,9 @@ export default function AddPets() {
                             value={form.PetWeight}
                             onChange={handleChange}
                         />
+                        {errors.weight && (
+                            <p className="text-red-500 text-xs mt-1">{errors.weight}</p>
+                        )}
                     </div>
                     <div className="">
                         <label className="block text-sm font-medium mb-1">
@@ -236,68 +482,100 @@ export default function AddPets() {
                             value={form.petColor}
                             onChange={(value) => handleSelectChange("petColor", value)}
                         />
+                        {errors.color && (
+                            <p className="text-red-500 text-xs mt-1">{errors.color}</p>
+                        )}
                     </div>
                     <div className="">
                         <label className="block text-sm font-medium mb-1">
                             Select Pet Type
                         </label>
                         <Select
-                            options={petColorOptions}
+                            options={petTypeOptions}
                             placeholder="Select Pet Type"
                             value={form.petType}
                             onChange={(value) => handleSelectChange("petType", value)}
                         />
+                        {errors.petTypeId && (
+                            <p className="text-red-500 text-xs mt-1">{errors.petTypeId}</p>
+                        )}
                     </div>
                     <div className="">
                         <label className="block text-sm font-medium mb-1">
-                            Add To Your List Of Pets
+                            {editingPet ? "Update Pet" : "Add To Your List Of Pets"}
                         </label>
-                        <Button
-                            variant="secondary"
-                            className="w-full !p-[12px] !rounded-[8px]"
-                            type="button"
-                            onClick={handleAddPet}
-                        >
-                            Add
-                        </Button>
+                        <div className="flex gap-2">
+                            <Button
+                                variant="secondary"
+                                className="flex-1 !p-[12px] !rounded-[8px]"
+                                type="button"
+                                onClick={handleAddPet}
+                                loading={apiLoading}
+                            >
+                                {editingPet ? "Update" : "Add"}
+                            </Button>
+                            {editingPet && (
+                                <Button
+                                    variant="secondary"
+                                    className="!p-[12px] !rounded-[8px]"
+                                    type="button"
+                                    onClick={handleCancelEdit}
+                                >
+                                    Cancel
+                                </Button>
+                            )}
+                        </div>
                     </div>
                 </div>
                 <div className="border-b ">
-                    <h2 className="mb-2">Your Pets</h2>
+                    <h2 className="mb-2">Your Pets Listing</h2>
                 </div>
                 <div className="pets-lists space-y-3">
-                    {pets.length === 0 && (
+                    {loadingPets ? (
+                        <p className="text-sm text-gray-500">Loading pets...</p>
+                    ) : pets.length === 0 ? (
                         <p className="text-sm text-gray-500">
                             No pets added yet
                         </p>
-                    )}
-
-                    {pets.map((pet) => (
-                        <div
-                            key={pet.id}
-                            className="rounded-lg border p-4 flex justify-between items-center"
-                        >
-                            <div>
-                                <p className="font-semibold">{pet.petName}</p>
-                                <p className="text-sm text-gray-500">
-                                    {pet.petBreed} • {pet.petGender}
-                                </p>
-                            </div>
-
-                            <button
-                                type="button"
-                                onClick={() => removePet(pet.id)}
-                                className="text-red-500 text-sm"
+                    ) : (
+                        pets.map((pet) => (
+                            <div
+                                key={pet.id}
+                                className="rounded-lg border p-4 flex justify-between items-center"
                             >
-                                Remove
-                            </button>
-                        </div>
-                    ))}
+                                <div>
+                                    <p className="font-semibold">{pet.name}</p>
+                                    <p className="text-sm text-gray-500">
+                                        {pet.breed} • {pet.gender}
+                                    </p>
+                                </div>
+                                <div className="flex gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => handleEditPet(pet)}
+                                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                        title="Edit pet"
+                                    >
+                                        <Edit size={18} />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleDeletePet(pet)}
+                                        disabled={deletingPetId === pet.id}
+                                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                                        title="Delete pet"
+                                    >
+                                        {deletingPetId === pet.id ? (
+                                            <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+                                        ) : (
+                                            <Trash2 size={18} />
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+                        ))
+                    )}
                 </div>
-
-                <Button variant="secondary" className="w-full" type="submit" loading={loading}>
-                    Submit
-                </Button>
             </form>
         </motion.div>
 

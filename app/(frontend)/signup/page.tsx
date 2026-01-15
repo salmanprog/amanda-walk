@@ -1,18 +1,33 @@
 "use client";
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import Button from "@/components/ui/button/Button";
 import Input from "@/components/form/input/InputField";
-import Select from "@/components/form/Select";
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from "framer-motion";
+import useApi, { ApiResponse } from "@/utils/useApi";
 import { useRouter } from "next/navigation";
 import { KeyRound } from "lucide-react";
 
-
-
+interface SignupResponse {
+  [key: string]: string;
+}
 
 export default function SignUpForm() {
   const router = useRouter();
+
+  // 🔐 Redirect if already logged in
+  useEffect(() => {
+    const token =
+      localStorage.getItem("token") ||
+      document.cookie
+        .split(";")
+        .find((c) => c.trim().startsWith("token="))
+        ?.split("=")[1];
+
+    if (token) router.push("/");
+  }, [router]);
+
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -22,50 +37,56 @@ export default function SignUpForm() {
     state: "",
     postalCode: "",
     country: "",
-    emergencyContactName: "",
-    emergencyContactPhone: "",
-    refered: "",
+    emergencyname: "",
+    emergencyNumber: "",
     vetName: "",
     password: "",
-    password_confirmation: "",
   });
 
-  const refferedOptions = [
-    { value: "currentcustomer", label: "Current Customer" },
-    { value: "google", label: "Google" },
-    { value: "localvet", label: "Local vet" },
-  ];
+  // 🔴 ONLY API validation errors
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { sendData, loading } = useApi({
+    url: "/api/users",
+    type: "manual",
+    requiresAuth: false,
+  });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
-  };
 
-  const handleSelectChange = (name: string, value: string) => {
-    setForm({
-      ...form,
-      [name]: value,
-    });
+    // clear only that field error
+    if (errors[e.target.name]) {
+      setErrors({ ...errors, [e.target.name]: "" });
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError(null);
+    setErrors({});
 
     try {
-      console.log(form);
+      const fd = new FormData();
+      Object.entries(form).forEach(([key, value]) => {
+        fd.append(key, value);
+      });
 
-      await new Promise((res) => setTimeout(res, 1200));
+      const res = await sendData<ApiResponse<SignupResponse>>(fd, undefined, "POST");
 
-      toast.success("Account created successfully");
-      router.push("/");
-    } catch (err) {
-      setError("Something went wrong");
-    } finally {
-      setLoading(false);
+      if (res.code === 200) {
+        toast.success("Account created successfully");
+        router.push("/");
+      } 
+      else if (res.code === 400) {
+        setErrors(res.data ?? {});
+        toast.error(res.message || "Validation failed");
+      } 
+      else {
+        toast.error(res.message || "Something went wrong");
+      }
+
+    } catch (err: any) {
+      toast.error(err?.message || "Server error");
     }
   };
 
@@ -73,193 +94,169 @@ export default function SignUpForm() {
     <motion.div
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="glass-effect rounded-2xl shadow-2xl p-6 mb-6">
-      <div className="">
-        <div className="text-center mb-10">
-          <div className="mx-auto w-16 h-16 bg-[var(--primary-theme)] rounded-full flex items-center justify-center mb-4 shadow-lg">
-            <KeyRound className="text-white" size={32} />
-          </div>
-          <h1 className="text-3xl font-bold text-center mb-6 gradient-text">
-            Sign Up
-          </h1>
+      className="glass-effect rounded-2xl shadow-2xl p-6 mb-6"
+    >
+      <div className="text-center mb-10">
+        <div className="mx-auto w-16 h-16 bg-[var(--primary-theme)] rounded-full flex items-center justify-center mb-4 shadow-lg">
+          <KeyRound className="text-white" size={32} />
         </div>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="">
-              <label className="block text-sm font-medium mb-1">
-                Name
-              </label>
-              <Input
-                type="text"
-                name="email"
-                required
-                value={form.name}
-                onChange={handleChange}
-              />
-            </div>
-            <div className="">
-              <label className="block text-sm font-medium mb-1">
-                Email
-              </label>
-              <Input
-                type="email"
-                name="email"
-                required
-                value={form.email}
-                onChange={handleChange}
-              />
-            </div>
-            <div className="">
-              <label className="block text-sm font-medium mb-1">
-                Emergency Contact Name
-              </label>
-              <Input
-                type="text"
-                name="emergencyContactName"
-                required
-                value={form.emergencyContactName}
-                onChange={handleChange}
-              />
-            </div>
-            <div className="">
-              <label className="block text-sm font-medium mb-1">
-                Emergency Contact Phone
-              </label>
-              <Input
-                type="text"
-                name="emergencyContactPhone"
-                required
-                value={form.emergencyContactPhone}
-                onChange={handleChange}
-              />
-            </div>
-            <div className="">
-              <label className="block text-sm font-medium mb-1">
-                Mobile Number
-              </label>
-              <Input
-                type="text"
-                name="mobileNumber"
-                required
-                value={form.mobileNumber}
-                onChange={handleChange}
-              />
-            </div>
-            <div className="">
-              <label className="block text-sm font-medium mb-1">
-                Country
-              </label>
-              <Input
-                type="text"
-                name="country"
-                required
-                value={form.country}
-                onChange={handleChange}
-              />
-            </div>
-            <div className="">
-              <label className="block text-sm font-medium mb-1">
-                State
-              </label>
-              <Input
-                type="text"
-                name="state"
-                required
-                value={form.state}
-                onChange={handleChange}
-              />
-            </div>
-            <div className="">
-              <label className="block text-sm font-medium mb-1">
-                City
-              </label>
-              <Input
-                type="text"
-                name="city"
-                required
-                value={form.city}
-                onChange={handleChange}
-              />
-            </div>
-            <div className="">
-              <label className="block text-sm font-medium mb-1">
-                Postal Code
-              </label>
-              <Input
-                type="text"
-                name="postalCode"
-                required
-                value={form.postalCode}
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Street Address
-              </label>
-              <Input
-                type="text"
-                name="streetAddress"
-                required
-                value={form.streetAddress}
-                onChange={handleChange}
-              />
-            </div>
-            <div className="">
-              <label className="block text-sm font-medium mb-1">
-                Select Reffered
-              </label>
-              <Select
-                options={refferedOptions}
-                placeholder="Select Referred"
-                value={form.refered}
-                onChange={(value) => handleSelectChange("refered", value)}
-              />
-            </div>
-            <div className="">
-              <label className="block text-sm font-medium mb-1">
-                Vet Name
-              </label>
-              <Input
-                type="text"
-                name="vetName"
-                required
-                value={form.vetName}
-                onChange={handleChange}
-              />
-            </div>
-            <div className="">
-              <label className="block text-sm font-medium mb-1">
-                Password
-              </label>
-              <Input
-                type="password"
-                name="password"
-                required
-                value={form.password}
-                onChange={handleChange}
-              />
-            </div>
-            <div className="">
-              <label className="block text-sm font-medium mb-1">
-                Confirm Password
-              </label>
-              <Input
-                type="password"
-                name="password"
-                required
-                value={form.password}
-                onChange={handleChange}
-              />
-            </div>
+        <h1 className="text-3xl font-bold gradient-text">Sign Up</h1>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+
+        {Object.values(errors).filter(Boolean).length > 0 && (
+          <div className="bg-red-100 text-red-700 p-3 rounded-md text-sm space-y-1">
+            {Object.values(errors)
+              .filter(Boolean)
+              .map((err, idx) => (
+                <div key={idx}>• {err}</div>
+              ))}
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+          <div>
+            <label className="text-sm font-medium">Name</label>
+            <Input
+              name="name"
+              value={form.name}
+              onChange={handleChange}
+              error={!!errors.name}
+              hint={errors.name}
+            />
           </div>
 
-          <Button variant="secondary" className="w-full" type="submit" loading={loading}>
-            Sign Up
-          </Button>
-        </form>
-      </div>
-    </motion.div>
+          <div>
+            <label className="text-sm font-medium">Email</label>
+            <Input
+              type="email"
+              name="email"
+              value={form.email}
+              onChange={handleChange}
+              error={!!errors.email}
+              hint={errors.email}
+            />
+          </div>
 
-  )
+          <div>
+            <label className="text-sm font-medium">Mobile Number</label>
+            <Input
+              name="mobileNumber"
+              value={form.mobileNumber}
+              onChange={handleChange}
+              error={!!errors.mobileNumber}
+              hint={errors.mobileNumber}
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium">Emergency Contact Name</label>
+            <Input
+              name="emergencyname"
+              value={form.emergencyname}
+              onChange={handleChange}
+              error={!!errors.emergencyname}
+              hint={errors.emergencyname}
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium">Emergency Contact Phone</label>
+            <Input
+              name="emergencyNumber"
+              value={form.emergencyNumber}
+              onChange={handleChange}
+              error={!!errors.emergencyNumber}
+              hint={errors.emergencyNumber}
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium">Country</label>
+            <Input
+              name="country"
+              value={form.country}
+              onChange={handleChange}
+              error={!!errors.country}
+              hint={errors.country}
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium">State</label>
+            <Input
+              name="state"
+              value={form.state}
+              onChange={handleChange}
+              error={!!errors.state}
+              hint={errors.state}
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium">City</label>
+            <Input
+              name="city"
+              value={form.city}
+              onChange={handleChange}
+              error={!!errors.city}
+              hint={errors.city}
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium">Postal Code</label>
+            <Input
+              name="postalCode"
+              value={form.postalCode}
+              onChange={handleChange}
+              error={!!errors.postalCode}
+              hint={errors.postalCode}
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium">Street Address</label>
+            <Input
+              name="streetAddress"
+              value={form.streetAddress}
+              onChange={handleChange}
+              error={!!errors.streetAddress}
+              hint={errors.streetAddress}
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium">Vet Name</label>
+            <Input
+              name="vetName"
+              value={form.vetName}
+              onChange={handleChange}
+              error={!!errors.vetName}
+              hint={errors.vetName}
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium">Password</label>
+            <Input
+              type="password"
+              name="password"
+              value={form.password}
+              onChange={handleChange}
+              error={!!errors.password}
+              hint={errors.password}
+            />
+          </div>
+
+        </div>
+
+        <Button type="submit" className="w-full" loading={loading}>
+          Create Account
+        </Button>
+      </form>
+    </motion.div>
+  );
 }
