@@ -7,6 +7,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import Button from "@/components/ui/button/Button";
 import { useState, useCallback } from "react";
 import { useCurrentUser } from "@/utils/currentUser";
+import Tabs from '@/components/tabs';
 
 
 import { Toaster } from 'react-hot-toast';
@@ -74,6 +75,12 @@ export default function FrontendLayout({
           </div>
 
         </motion.div>
+      {!loadingUser && user && (
+  <div className=''>
+    <Tabs/>
+  </div>
+)}
+
         <main>{children}
           <Toaster
             position="top-right"
@@ -87,8 +94,12 @@ export default function FrontendLayout({
               },
             }}
           />
+        <div>
+ 
+</div>
         </main>
       </div>
+           
     </div>
   );
 }

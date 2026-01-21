@@ -20,7 +20,7 @@ export default function LoginForm() {
   useEffect(() => {
     const token = localStorage.getItem("token") || document.cookie.split(';').find(c => c.trim().startsWith('token='))?.split('=')[1];
     if (token) {
-      router.push("/add-pets");
+      router.push("/pets-list");
     }
   }, [router]);
 
@@ -60,7 +60,7 @@ export default function LoginForm() {
         toast.success("Login successful");
         // router.replace("/add-pets");
         // router.refresh();
-        window.location.href = "/add-pets";
+        window.location.href = "/pets-list";
       } else {
         setErrorMsg(res.message || "Credentials do not match our records.");
       }

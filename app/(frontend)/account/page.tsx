@@ -75,7 +75,7 @@ export default function AccountPage() {
 
   // Set page title
   useEffect(() => {
-    document.title = "My Waldo | My Account";
+    document.title = "Amanda | My Account";
   }, []);
 
   // Redirect if not logged in
@@ -237,7 +237,7 @@ export default function AccountPage() {
   if (loadingUser && !user) {
     return (
       <>
-        <InnerBanner title="My Account" bannerClass="account-banner" />
+        <InnerBanner title="" bannerClass="account-banner" />
         <section className="py-20">
           <div className="container">
             <div className="text-center">Loading...</div>
@@ -259,7 +259,7 @@ export default function AccountPage() {
 
   return (
     <>
-      <InnerBanner title="My Account" bannerClass="account-banner" />
+      {/* <InnerBanner title="My Account" bannerClass="account-banner" /> */}
       <section className="py-20">
         <div className="container">
           <div className="max-w-4xl mx-auto">
