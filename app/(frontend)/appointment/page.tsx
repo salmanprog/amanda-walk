@@ -56,7 +56,7 @@ export default function AppointmentPage() {
     const removeAppointment = (id: string) => {
         setAppointments(appointments.filter((a) => a.id !== id));
         toast.success("Slot removed");
-    };
+    }; 
 
     const handleSubmit = async () => {
         if (appointments.length === 0) {

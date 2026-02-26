@@ -1,4 +1,5 @@
 import type { Prisma } from "@prisma/client";
+import { UserType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import RestController from "@/core/RestController";
 import { NextResponse } from "next/server";
@@ -71,26 +72,57 @@ export default class AdminBookingController extends RestController<
     const petId = Number((this as any)._petIdTemp);
     let schedule: any[] = [];
     const temp = (this as any)._scheduleTemp;
-    schedule = typeof temp === 'string' ? JSON.parse(temp) : [];
-
-    if (!record.id) {
-        throw new Error("Booking ID missing after store");
+    if (typeof temp === "string") {
+      try {
+        const parsed = JSON.parse(temp);
+        schedule = Array.isArray(parsed) ? parsed : [];
+      } catch {
+        schedule = [];
+      }
+    } else if (Array.isArray(temp)) {
+      schedule = temp;
     }
 
-    for (let i = 0; i < schedule.length; i++) {
+    if (!record.id) {
+      throw new Error("Booking ID missing after store");
+    }
 
-      await prisma.bookingSchedule.create({
+    // Resolve employeeId: use provided value if valid, else fallback to Employee then ADMIN (frontend often sends 0)
+    let effectiveEmployeeId = Number.isInteger(employeeId) && employeeId > 0 ? employeeId : 0;
+    if (effectiveEmployeeId === 0) {
+      const fallback = await prisma.user.findFirst({
+        where: { userType: UserType.Employee, status: true },
+        select: { id: true },
+      });
+      effectiveEmployeeId = fallback?.id ?? 0;
+    }
+    if (effectiveEmployeeId === 0) {
+      const adminFallback = await prisma.user.findFirst({
+        where: { userType: UserType.ADMIN, status: true },
+        select: { id: true },
+      });
+      effectiveEmployeeId = adminFallback?.id ?? 0;
+    }
+
+    const validPetId = Number.isFinite(petId) && petId > 0 ? petId : 0;
+    if (effectiveEmployeeId > 0 && validPetId > 0 && schedule.length > 0) {
+      for (let i = 0; i < schedule.length; i++) {
+        const item = schedule[i];
+        const scheduleDate = item?.schedule_date;
+        const scheduleTime = item?.schedule_time;
+        if (!scheduleDate || scheduleTime == null) continue;
+        await prisma.bookingSchedule.create({
           data: {
             bookingId: record.id,
-            employeeId: employeeId,
-            petId: petId,
+            employeeId: effectiveEmployeeId,
+            petId: validPetId,
             serviceCategoryId: record.serviceCategoryId,
             serviceId: record.serviceId,
-            scheduleDate: new Date(`${schedule[i].schedule_date}T00:00:00`),
-            scheduleTime: schedule[i].schedule_time,
-          }
+            scheduleDate: new Date(`${scheduleDate}T00:00:00`),
+            scheduleTime: String(scheduleTime),
+          },
         });
-
+      }
     }
 
     return record;

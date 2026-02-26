@@ -46,7 +46,7 @@ export default function PetsList() {
     });
 
     // Fetch pets from API on component mount
-    useEffect(() => {
+    useEffect(() => {   
         const loadPets = async () => {
             setLoadingPets(true);
             try {
@@ -87,7 +87,7 @@ export default function PetsList() {
             {/* Add Pet Button */}
             <div className="absolute top-4 right-4 md:top-6 md:right-6">
                 <Button
-                    onClick={() => router.push("/add-pets")}
+                    onClick={() => router.push("/pets/add")}
                     variant="secondary"
                     className="px-4 py-2"
                     type="button"
@@ -128,7 +128,7 @@ export default function PetsList() {
                             <div className="flex gap-2">
                                 <button
                                     type="button"
-                                    onClick={() => handleEditPet(pet)}
+                                    onClick={() => router.push(`/pets/edit/${pet.slug}`)}
                                     className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                                     title="Edit pet"
                                 >

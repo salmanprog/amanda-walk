@@ -8,7 +8,7 @@ export default function Tabs() {
   const tabs = [
     {
       name: "Pet",
-      href: "/pets-list",
+      href: "/pets",
       icon: PawPrint,
     },
     {

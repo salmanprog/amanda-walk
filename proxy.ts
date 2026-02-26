@@ -7,7 +7,7 @@ const protectedApiRoutes = [
   { path: "/api/users/profile", methods: ["GET", "PATCH"] },
   { path: "/api/users/pet", methods: ["POST", "GET", "PATCH", "DELETE"] },
   { path: "/api/users/employe-schedule", methods: ["GET"] },
-  { path: "/api/users/booking", methods: ["POST", "GET"] },
+  { path: "/api/users/booking", methods: ["POST", "GET", "PATCH"] },
   { path: "/api/admin/profile", methods: ["GET", "PATCH"] },
   { path: "/api/admin/address", methods: ["POST", "GET", "PATCH", "DELETE"] },
   { path: "/api/admin/users", methods: ["POST", "GET", "PATCH", "DELETE"] },

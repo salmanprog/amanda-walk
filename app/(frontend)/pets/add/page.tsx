@@ -232,14 +232,7 @@ export default function AddPets() {
             };
 
             let res: ApiResponse;
-
-            if (editingPet) {
-                // Update existing pet
-                res = await makeApiCall(`/api/users/pet/${editingPet.slug}`, "PATCH", petData);
-            } else {
-                // Create new pet
                 res = await sendData<ApiResponse>(petData, undefined, "POST");
-            }
 
             if (res.code === 200) {
                 // Reset form

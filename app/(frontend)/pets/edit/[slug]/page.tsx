@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Select from "@/components/form/Select";
 import DatePicker from "react-datepicker";
 import { PawPrint, Edit, Trash2 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import useApi, { ApiResponse } from "@/utils/useApi";
 import useAuthGuard from "@/hooks/useAuthGuard";
 
@@ -34,24 +34,17 @@ interface PetFromApi {
     petTypeId?: number;
 }
 
-export default function AddPets() {
+export default function EditPets() {
     useAuthGuard();
+    const params = useParams();
+    const slug = params?.slug as string;
     const [startDate, setStartDate] = useState<Date | null>(null);
-    const [pets, setPets] = useState<PetFromApi[]>([]);
-    const [loadingPets, setLoadingPets] = useState(false);
-    const [editingPet, setEditingPet] = useState<PetFromApi | null>(null);
-    const [deletingPetId, setDeletingPetId] = useState<number | null>(null);
+    const [loadingPet, setLoadingPet] = useState(true);
+    const [currentPet, setCurrentPet] = useState<PetFromApi | null>(null);
     const router = useRouter();
 
     const { sendData, loading: apiLoading } = useApi({
         url: "/api/users/pet",
-        type: "manual",
-        requiresAuth: true,
-    });
-
-    const { fetchApi: fetchPets } = useApi({
-        url: "/api/users/pet",
-        method: "GET",
         type: "manual",
         requiresAuth: true,
     });
@@ -123,25 +116,68 @@ export default function AddPets() {
     const [error, setError] = useState<string | null>(null);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
-    // Fetch pets from API on component mount
+    // Fetch pet by slug on component mount
     useEffect(() => {
-        const loadPets = async () => {
-            setLoadingPets(true);
+        const loadPet = async () => {
+            if (!slug) return;
+            
+            setLoadingPet(true);
             try {
-                const res = await fetchPets();
+                const token = typeof window !== "undefined" 
+                    ? localStorage.getItem("token") || sessionStorage.getItem("token") || ""
+                    : "";
+
+                const headers: Record<string, string> = {
+                    "Content-Type": "application/json",
+                };
+
+                if (token) {
+                    headers["Authorization"] = `Bearer ${token}`;
+                }
+
+                const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "";
+                const response = await fetch(`${baseUrl}/api/users/pet/${slug}`, {
+                    method: "GET",
+                    headers,
+                });
+
+                const res: ApiResponse = await response.json();
+
                 if (res.code === 200 && res.data) {
-                    setPets(Array.isArray(res.data) ? res.data : []);
+                    const pet = res.data as PetFromApi;
+                    setCurrentPet(pet);
+                    
+                    // Populate form with pet data
+                    setForm({
+                        petName: pet.name || "",
+                        petGender: mapGenderFromApi(pet.gender || "MALE"),
+                        petBreed: pet.breed || "",
+                        PetWeight: pet.weight || "",
+                        petColor: pet.color || "",
+                        petType: pet.petTypeId?.toString() || "",
+                    });
+                    
+                    // Set date if available
+                    if (pet.dob) {
+                        const parsedDate = parseDateFromString(pet.dob);
+                        setStartDate(parsedDate);
+                    }
+                } else {
+                    toast.error(res.message || "Failed to load pet");
+                    router.push("/pets");
                 }
             } catch (err: any) {
-                console.error("Failed to load pets:", err);
+                console.error("Failed to load pet:", err);
+                toast.error("Failed to load pet. Please try again.");
+                router.push("/pets");
             } finally {
-                setLoadingPets(false);
+                setLoadingPet(false);
             }
         };
 
-        loadPets();
+        loadPet();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [slug]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setForm({ ...form, [e.target.name]: e.target.value });
@@ -212,8 +248,8 @@ export default function AddPets() {
         return true;
     };
 
-    const handleAddPet = async () => {
-        if (!validateForm()) return;
+    const handleUpdatePet = async () => {
+        if (!validateForm() || !slug) return;
 
         setError(null);
         setErrors({});
@@ -231,79 +267,30 @@ export default function AddPets() {
                 notes: "",
             };
 
-            let res: ApiResponse;
-
-            if (editingPet) {
-                // Update existing pet
-                res = await makeApiCall(`/api/users/pet/${editingPet.slug}`, "PATCH", petData);
-            } else {
-                // Create new pet
-                res = await sendData<ApiResponse>(petData, undefined, "POST");
-            }
+            // Use PATCH to update pet by slug
+            const res = await makeApiCall(`/api/users/pet/${slug}`, "PATCH", petData);
 
             if (res.code === 200) {
-                // Reset form
-                setForm({
-                    petName: "",
-                    petGender: "",
-                    petBreed: "",
-                    PetWeight: "",
-                    petColor: "",
-                    petType: "",
-                });
-                setStartDate(null);
-                setEditingPet(null);
-                setErrors({});
-
-                toast.success(editingPet ? "Pet updated successfully" : "Pet added successfully");
-
-                // Fetch updated pets list from API
-                const petsRes = await fetchPets();
-                if (petsRes.code === 200 && petsRes.data) {
-                    setPets(Array.isArray(petsRes.data) ? petsRes.data : []);
-                }
+                toast.success("Pet updated successfully");
+                // Redirect back to pets list
+                router.push("/pets");
             } else if (res.code === 400) {
                 // Handle validation errors
                 setErrors(res.data ?? {});
                 toast.error(res.message || "Validation failed");
             } else {
-                throw new Error(res.message || editingPet ? "Failed to update pet" : "Failed to add pet");
+                throw new Error(res.message || "Failed to update pet");
             }
         } catch (err: any) {
-            const errorMessage = err?.message || (editingPet ? "Failed to update pet. Please try again." : "Failed to add pet. Please try again.");
+            const errorMessage = err?.message || "Failed to update pet. Please try again.";
             setError(errorMessage);
             toast.error(errorMessage);
         }
     };
 
 
-    const handleCancelEdit = () => {
-        setEditingPet(null);
-        setForm({
-            petName: "",
-            petGender: "",
-            petBreed: "",
-            PetWeight: "",
-            petColor: "",
-            petType: "",
-        });
-        setStartDate(null);
-        setErrors({});
-        setError(null);
-    };
-
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-
-        if (pets.length === 0) {
-            toast.error("Please add at least one pet before continuing");
-            return;
-        }
-
-        // All pets are already added via API, just redirect
-        toast.success("Proceeding to service selection");
-        router.push("/service");
+    const handleCancel = () => {
+        router.push("/pets");
     };
 
 
@@ -318,33 +305,50 @@ export default function AddPets() {
                     <PawPrint className="text-white" size={32} />
                 </div>
                 <h1 className="text-3xl font-bold text-center mb-6 gradient-text">
-                {editingPet ? "Edit" : "Add"} Pets
+                    Edit Pet
                 </h1>
             </div>
 
-            {error && (
-                <div className="mb-4 text-red-600 text-sm">
-                    {error}
+            {loadingPet ? (
+                <div className="text-center py-8">
+                    <p className="text-sm text-gray-500">Loading pet data...</p>
                 </div>
-            )}
-
-            {/* Display validation errors for fields not in form (like notes) */}
-            {Object.keys(errors).length > 0 && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                    {Object.entries(errors).map(([key, value]) => {
-                        // Only show errors for fields that don't have their own error display
-                        const hasFieldDisplay = ['name', 'gender', 'dob', 'breed', 'weight', 'color', 'petTypeId'].includes(key);
-                        if (hasFieldDisplay) return null;
-                        return (
-                            <p key={key} className="text-red-600 text-sm">
-                                {key}: {value}
-                            </p>
-                        );
-                    })}
+            ) : !currentPet ? (
+                <div className="text-center py-8">
+                    <p className="text-sm text-red-500">Pet not found</p>
+                    <Button
+                        variant="secondary"
+                        className="mt-4"
+                        onClick={handleCancel}
+                    >
+                        Back to Pets List
+                    </Button>
                 </div>
-            )}
+            ) : (
+                <>
+                    {error && (
+                        <div className="mb-4 text-red-600 text-sm">
+                            {error}
+                        </div>
+                    )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+                    {/* Display validation errors for fields not in form (like notes) */}
+                    {Object.keys(errors).length > 0 && (
+                        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                            {Object.entries(errors).map(([key, value]) => {
+                                // Only show errors for fields that don't have their own error display
+                                const hasFieldDisplay = ['name', 'gender', 'dob', 'breed', 'weight', 'color', 'petTypeId'].includes(key);
+                                if (hasFieldDisplay) return null;
+                                return (
+                                    <p key={key} className="text-red-600 text-sm">
+                                        {key}: {value}
+                                    </p>
+                                );
+                            })}
+                        </div>
+                    )}
+
+                    <form onSubmit={(e) => { e.preventDefault(); handleUpdatePet(); }} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label className="block text-sm font-medium mb-1">
@@ -458,32 +462,31 @@ export default function AddPets() {
                     </div>
                     <div className="">
                         <label className="block text-sm font-medium mb-1">
-                            {editingPet ? "Update Pet" : "Add To Your List Of Pets"}
+                            Update Pet
                         </label>
                         <div className="flex gap-2">
                             <Button
                                 variant="secondary"
                                 className="flex-1 !p-[12px] !rounded-[8px]"
-                                type="button"
-                                onClick={handleAddPet}
+                                type="submit"
                                 loading={apiLoading}
                             >
-                                {editingPet ? "Update" : "Add"}
+                                Update
                             </Button>
-                            {editingPet && (
-                                <Button
-                                    variant="secondary"
-                                    className="!p-[12px] !rounded-[8px]"
-                                    type="button"
-                                    onClick={handleCancelEdit}
-                                >
-                                    Cancel
-                                </Button>
-                            )}
+                            <Button
+                                variant="secondary"
+                                className="!p-[12px] !rounded-[8px]"
+                                type="button"
+                                onClick={handleCancel}
+                            >
+                                Cancel
+                            </Button>
                         </div>
                     </div>
                 </div>
-            </form>
+                    </form>
+                </>
+            )}
         </motion.div>
 
     );

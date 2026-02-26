@@ -19,8 +19,6 @@ export const storeUser = yup.object({
 export const updateUser = yup.object({
   name: yup.string().min(2).max(20).optional(),
   mobileNumber: yup.string().optional().nullable(),
-  emergencyname: yup.string().required("Emergency name is required"),
-  emergencyNumber: yup.string().required("Emergency number is required"),
   referedBy: yup.string().optional(),
   vetName: yup.string().optional(),
   streetAddress: yup.string().optional(),
@@ -161,12 +159,13 @@ export const storeBooking = yup.object({
 });
 
 export const updateBooking = yup.object({
-  serviceCategoryId: yup.string().required("Service category is required"),
-  serviceId: yup.string().required("Service is required"),
-  quantity: yup.string().required("Quantity is required"),
-  tax: yup.string().required("Tax is required"),
-  discount: yup.string().required("Discount is required"),
-  totalPrice: yup.string().required("Total price is required"),
+  serviceCategoryId: yup.string().optional(),
+  serviceId: yup.string().optional(),
+  quantity: yup.string().optional(),
+  tax: yup.string().optional(),
+  discount: yup.string().optional(),
+  totalPrice: yup.string().optional(),
+  status: yup.string().oneOf(["PENDING", "CONFIRMED", "COMPLETED", "CANCELLED"]).optional(),
 });
 
 export const storePetType = yup.object({

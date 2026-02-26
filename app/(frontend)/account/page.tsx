@@ -9,6 +9,8 @@ import Input from "@/components/form/input/InputField";
 import Label from "@/components/form/Label";
 import Button from "@/components/ui/button/Button";
 import Image from "next/image";
+import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table";
+import Badge from "@/components/ui/badge/Badge";
 
 interface AccountUser {
   id: number;
@@ -26,7 +28,7 @@ export default function AccountPage() {
   const router = useRouter();
   const { user: currentUser, loadingUser, errorUser } = useCurrentUser();
   const user = currentUser as AccountUser | null;
-  const [activeTab, setActiveTab] = useState<"profile" | "password">("profile");
+  const [activeTab, setActiveTab] = useState<"profile" | "password" | "booking">("profile");
   const [isEditing, setIsEditing] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -98,6 +100,54 @@ export default function AccountPage() {
     method: "POST",
     requiresAuth: true,
   });
+
+  const { data: bookingsData, fetchApi: fetchBookings, loading: loadingBookings } = useApi({
+    url: "/api/users/booking",
+    method: "GET",
+    type: "manual",
+    requiresAuth: true,
+  });
+
+  type BookingItem = {
+    id: number;
+    userName?: string;
+    userEmail?: string;
+    userPhone?: string;
+    categoryName?: string;
+    serviceName?: string;
+    quantity?: number;
+    tax?: number;
+    discount?: number;
+    totalPrice: number;
+    isPaid?: boolean;
+    status: string;
+    createdAt?: string | null;
+    updatedAt?: string | null;
+    scheduleDate?: string | null;
+    scheduleTime?: string | null;
+    isStarted?: boolean;
+    isCompleted?: boolean;
+    schedules?: Array<{
+      id?: number;
+      scheduleDate?: string | Date | null;
+      scheduleTime?: string | null;
+      isStarted?: boolean;
+      isCompleted?: boolean;
+    }>;
+  };
+
+  const [bookings, setBookings] = useState<BookingItem[]>([]);
+  const [viewBookingDetails, setViewBookingDetails] = useState<BookingItem | null>(null);
+
+  useEffect(() => {
+    if (activeTab === "booking") fetchBookings();
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (bookingsData && Array.isArray(bookingsData)) {
+      setBookings(bookingsData);
+    }
+  }, [bookingsData]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -285,6 +335,16 @@ export default function AccountPage() {
               >
                 Change Password
               </button>
+              <button
+                onClick={() => setActiveTab("booking")}
+                className={`px-6 py-3 font-semibold transition-colors ${
+                  activeTab === "booking"
+                    ? "text-[var(--primary-theme)] border-b-2 border-[var(--primary-theme)]"
+                    : "text-gray-600 hover:text-gray-900"
+                }`}
+              >
+                Booking
+              </button>
             </div>
 
             {/* Success/Error Messages */}
@@ -468,6 +528,304 @@ export default function AccountPage() {
                       </Button>
                     </div>
                   </form>
+                )}
+              </div>
+            )}
+
+            {/* Booking Tab */}
+            {activeTab === "booking" && (
+              <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-200">
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">My Bookings</h2>
+                <div className="max-w-full overflow-x-auto">
+                  {loadingBookings ? (
+                    <p className="text-gray-500 py-4">Loading bookings...</p>
+                  ) : bookings.length === 0 ? (
+                    <p className="text-gray-500 py-4">No bookings yet.</p>
+                  ) : (
+                    <Table>
+                      <TableHeader className="border-gray-100 dark:border-gray-800 border-y">
+                        <TableRow>
+                          <TableCell
+                            isHeader
+                            className="py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                          >
+                            ID
+                          </TableCell>
+                          <TableCell
+                            isHeader
+                            className="py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                          >
+                            Category
+                          </TableCell>
+                          <TableCell
+                            isHeader
+                            className="py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                          >
+                            Service
+                          </TableCell>
+                          <TableCell
+                            isHeader
+                            className="py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                          >
+                            Total
+                          </TableCell>
+                          <TableCell
+                            isHeader
+                            className="py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                          >
+                            Status
+                          </TableCell>
+                          <TableCell
+                            isHeader
+                            className="py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                          >
+                            Action
+                          </TableCell>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody className="divide-y divide-gray-100 dark:divide-gray-800">
+                        {bookings.map((booking) => (
+                          <TableRow key={booking.id}>
+                            <TableCell className="py-3 text-gray-500 text-theme-sm dark:text-gray-400">
+                              {booking.id}
+                            </TableCell>
+                            <TableCell className="py-3 text-gray-500 text-theme-sm dark:text-gray-400">
+                              {booking.categoryName ?? "—"}
+                            </TableCell>
+                            <TableCell className="py-3 text-gray-500 text-theme-sm dark:text-gray-400">
+                              {booking.serviceName ?? "—"}
+                            </TableCell>
+                            <TableCell className="py-3 text-gray-500 text-theme-sm dark:text-gray-400">
+                              ${Number(booking.totalPrice).toFixed(2)}
+                            </TableCell>
+                            <TableCell className="py-3">
+                              <Badge
+                                size="sm"
+                                color={
+                                  booking.status === "PENDING"
+                                    ? "warning"
+                                    : booking.status === "CANCELLED"
+                                      ? "error"
+                                      : "success"
+                                }
+                              >
+                                {booking.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="py-3">
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                size="sm"
+                                className="!py-1.5 !px-3 text-theme-xs"
+                                onClick={() => setViewBookingDetails(booking)}
+                              >
+                                View
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </div>
+
+                {/* Booking details modal */}
+                {viewBookingDetails && (
+                  <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-y-auto"
+                    onClick={() => setViewBookingDetails(null)}
+                  >
+                    <div
+                      className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-2xl w-full p-6 border border-gray-200 dark:border-gray-700 my-8"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                          Booking #{viewBookingDetails.id}
+                        </h3>
+                        <button
+                          type="button"
+                          onClick={() => setViewBookingDetails(null)}
+                          className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 text-2xl leading-none"
+                        >
+                          &times;
+                        </button>
+                      </div>
+                      <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm mb-6">
+                        <div>
+                          <dt className="text-gray-500 dark:text-gray-400">User name</dt>
+                          <dd className="font-medium text-gray-900 dark:text-white">
+                            {viewBookingDetails.userName ?? "—"}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-gray-500 dark:text-gray-400">Email</dt>
+                          <dd className="font-medium text-gray-900 dark:text-white">
+                            {viewBookingDetails.userEmail ?? "—"}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-gray-500 dark:text-gray-400">Phone</dt>
+                          <dd className="font-medium text-gray-900 dark:text-white">
+                            {viewBookingDetails.userPhone ?? "—"}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-gray-500 dark:text-gray-400">Category</dt>
+                          <dd className="font-medium text-gray-900 dark:text-white">
+                            {viewBookingDetails.categoryName ?? "—"}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-gray-500 dark:text-gray-400">Service</dt>
+                          <dd className="font-medium text-gray-900 dark:text-white">
+                            {viewBookingDetails.serviceName ?? "—"}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-gray-500 dark:text-gray-400">Quantity</dt>
+                          <dd className="font-medium text-gray-900 dark:text-white">
+                            {viewBookingDetails.quantity ?? "—"}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-gray-500 dark:text-gray-400">Tax</dt>
+                          <dd className="font-medium text-gray-900 dark:text-white">
+                            {viewBookingDetails.tax != null ? `$${Number(viewBookingDetails.tax).toFixed(2)}` : "—"}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-gray-500 dark:text-gray-400">Discount</dt>
+                          <dd className="font-medium text-gray-900 dark:text-white">
+                            {viewBookingDetails.discount != null ? `$${Number(viewBookingDetails.discount).toFixed(2)}` : "—"}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-gray-500 dark:text-gray-400">Total</dt>
+                          <dd className="font-medium text-gray-900 dark:text-white">
+                            ${Number(viewBookingDetails.totalPrice).toFixed(2)}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-gray-500 dark:text-gray-400">Paid</dt>
+                          <dd className="font-medium text-gray-900 dark:text-white">
+                            {viewBookingDetails.isPaid != null ? (viewBookingDetails.isPaid ? "Yes" : "No") : "—"}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-gray-500 dark:text-gray-400">Status</dt>
+                          <dd>
+                            <Badge
+                              size="sm"
+                              color={
+                                viewBookingDetails.status === "PENDING"
+                                  ? "warning"
+                                  : viewBookingDetails.status === "CANCELLED"
+                                    ? "error"
+                                    : "success"
+                              }
+                            >
+                              {viewBookingDetails.status}
+                            </Badge>
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-gray-500 dark:text-gray-400">Created</dt>
+                          <dd className="font-medium text-gray-900 dark:text-white">
+                            {viewBookingDetails.createdAt
+                              ? new Date(viewBookingDetails.createdAt).toLocaleString("en-US")
+                              : "—"}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-gray-500 dark:text-gray-400">Updated</dt>
+                          <dd className="font-medium text-gray-900 dark:text-white">
+                            {viewBookingDetails.updatedAt
+                              ? new Date(viewBookingDetails.updatedAt).toLocaleString("en-US")
+                              : "—"}
+                          </dd>
+                        </div>
+                      </dl>
+
+                      {/* Booking schedules */}
+                      <div className="mb-6">
+                        <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Booking schedules
+                        </h4>
+                        {viewBookingDetails.schedules && viewBookingDetails.schedules.length > 0 ? (
+                          <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-600">
+                            <Table>
+                              <TableHeader className="border-gray-100 dark:border-gray-700 border-y">
+                                <TableRow>
+                                  <TableCell
+                                    isHeader
+                                    className="py-2 font-medium text-gray-500 text-theme-xs dark:text-gray-400"
+                                  >
+                                    Schedule date
+                                  </TableCell>
+                                  <TableCell
+                                    isHeader
+                                    className="py-2 font-medium text-gray-500 text-theme-xs dark:text-gray-400"
+                                  >
+                                    Schedule time
+                                  </TableCell>
+                                  <TableCell
+                                    isHeader
+                                    className="py-2 font-medium text-gray-500 text-theme-xs dark:text-gray-400"
+                                  >
+                                    Started
+                                  </TableCell>
+                                  <TableCell
+                                    isHeader
+                                    className="py-2 font-medium text-gray-500 text-theme-xs dark:text-gray-400"
+                                  >
+                                    Completed
+                                  </TableCell>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody className="divide-y divide-gray-100 dark:divide-gray-700">
+                                {viewBookingDetails.schedules.map((s, i) => (
+                                  <TableRow key={s.id ?? i}>
+                                    <TableCell className="py-2 text-theme-sm dark:text-gray-400">
+                                      {s.scheduleDate
+                                        ? new Date(s.scheduleDate as string | Date).toLocaleDateString("en-US", {
+                                            year: "numeric",
+                                            month: "short",
+                                            day: "numeric",
+                                          })
+                                        : "—"}
+                                    </TableCell>
+                                    <TableCell className="py-2 text-theme-sm dark:text-gray-400">
+                                      {s.scheduleTime ?? "—"}
+                                    </TableCell>
+                                    <TableCell className="py-2 text-theme-sm dark:text-gray-400">
+                                      {!!s.isStarted ? "Yes" : "No"}
+                                    </TableCell>
+                                    <TableCell className="py-2 text-theme-sm dark:text-gray-400">
+                                      {!!s.isCompleted ? "Yes" : "No"}
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        ) : (
+                          <p className="text-sm text-gray-500 dark:text-gray-400">No schedule entries.</p>
+                        )}
+                      </div>
+
+                      <div className="mt-6">
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          onClick={() => setViewBookingDetails(null)}
+                        >
+                          Close
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
                 )}
               </div>
             )}

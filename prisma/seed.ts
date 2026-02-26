@@ -308,6 +308,39 @@ async function main() {
     sortOrder: 1,
   });
 
+  // MAIN SECTION - Bookings (Parent)
+  const bookingsModule = await findOrCreateModule({
+    name: "Bookings",
+    routeName: "#",
+    icon: "Calendar",
+    sortOrder: sortOrder++,
+  });
+
+  // MAIN SECTION - Bookings (Child)
+  const allBookingsModule = await findOrCreateModule({
+    name: "All Bookings",
+    routeName: "/admin/booking/",
+    icon: null,
+    parentId: bookingsModule.id,
+    sortOrder: 1,
+  });
+
+  // MAIN SECTION - Bookings (Parent)
+  const EmployeebookingsModule = await findOrCreateModule({
+    name: "Employee Bookings",
+    routeName: "#",
+    icon: "Calendar",
+    sortOrder: sortOrder++,
+  });
+
+  // MAIN SECTION - Bookings (Child)
+  const allEmployeeBookingsModule = await findOrCreateModule({
+    name: "All Employee Bookings",
+    routeName: "/admin/employee-bookings/",
+    icon: null,
+    parentId: EmployeebookingsModule.id,
+    sortOrder: 1,
+  });
   // Collect all modules for permission creation
   const superAdminModules = [
     dashboardModule,
@@ -316,6 +349,8 @@ async function main() {
     allServicesModule,
     employeesModule,
     allEmployeesModule,
+    bookingsModule,
+    allBookingsModule,
   ];
   
   const adminModules = [
@@ -325,11 +360,15 @@ async function main() {
     allServicesModule,
     employeesModule,
     allEmployeesModule,
+    bookingsModule,
+    allBookingsModule,
   ];
   
   const clientModules = [
     dashboardModule,
     allEmployeeServicesModule,
+    EmployeebookingsModule,
+    allEmployeeBookingsModule,
   ];
   
   const roleModuleMap = [
