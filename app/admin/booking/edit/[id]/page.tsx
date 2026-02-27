@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { MessageCircle } from "lucide-react";
 import Button from "@/components/ui/button/Button";
 import useApi from "@/utils/useApi";
 import Badge from "@/components/ui/badge/Badge";
@@ -137,9 +138,20 @@ export default function EditBookingStatus() {
 
   return (
     <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white px-4 pb-3 pt-4 dark:border-gray-800 sm:px-6">
-      <div className="mb-6">
-        <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">Edit Booking Status</h3>
-        <p className="mt-1 text-sm text-gray-500">Booking #{bookingData?.id}</p>
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">Edit Booking Status</h3>
+          <p className="mt-1 text-sm text-gray-500">Booking #{bookingData?.id}</p>
+        </div>
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={() => router.push(`/admin/chat?bookingId=${bookingData?.id ?? id}`)}
+          className="inline-flex items-center gap-2"
+        >
+          <MessageCircle className="h-4 w-4" aria-hidden />
+          Chat
+        </Button>
       </div>
 
       <div className="mb-6 rounded-xl border border-gray-100 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-gray-800/30">

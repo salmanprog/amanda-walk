@@ -142,6 +142,8 @@ model User {
   employeeservices EmployeeServices[]
   bookingSchedules BookingSchedule[]
   pets Pet[]
+  bookingChatMessagesSent     BookingChatMessage[] @relation("BookingChatMessageSender")
+  bookingChatMessagesReceived BookingChatMessage[] @relation("BookingChatMessageReceiver")
 
   @@index([name])
 }
@@ -302,6 +304,7 @@ model Booking {
   category     ServiceCategory   @relation(fields: [serviceCategoryId], references: [id], onDelete: Cascade)
   service      Services          @relation(fields: [serviceId], references: [id], onDelete: Cascade)
   schedules    BookingSchedule[]
+  chatMessages BookingChatMessage[]
 
   @@index([userId])
   @@index([assignedTo])
@@ -340,6 +343,24 @@ model BookingSchedule {
   @@index([employeeId])
   @@index([scheduleDate])
   @@map("booking_schedules")
+}
+
+model BookingChatMessage {
+  id         Int      @id @default(autoincrement())
+  bookingId  Int
+  senderId   Int
+  receiverId Int?
+  message    String   @db.Text
+  createdAt  DateTime @default(now()) @db.Timestamp(6)
+
+  booking  Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  sender   User    @relation("BookingChatMessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User?   @relation("BookingChatMessageReceiver", fields: [receiverId], references: [id], onDelete: SetNull)
+
+  @@index([bookingId])
+  @@index([senderId])
+  @@index([receiverId])
+  @@map("booking_chat_messages")
 }
 
 model PetType {

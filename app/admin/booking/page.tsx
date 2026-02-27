@@ -215,7 +215,7 @@ export default function BookingList() {
                   </TableCell>
                   <TableCell className="py-3 text-center">
                     <ActionMenu
-                        editUrl={`/admin/booking/edit/${booking.id}`}
+                        viewUrl={`/admin/booking/edit/${booking.id}`}
                       />
                 </TableCell>
                 </TableRow>

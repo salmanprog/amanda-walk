@@ -11,6 +11,7 @@ import Button from "@/components/ui/button/Button";
 import Image from "next/image";
 import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table";
 import Badge from "@/components/ui/badge/Badge";
+import { MessageCircle } from "lucide-react";
 
 interface AccountUser {
   id: number;
@@ -640,17 +641,32 @@ export default function AccountPage() {
                       className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-2xl w-full p-6 border border-gray-200 dark:border-gray-700 my-8"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <div className="flex justify-between items-center mb-4">
+                      <div className="flex justify-between items-center mb-4" >
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                           Booking #{viewBookingDetails.id}
                         </h3>
-                        <button
-                          type="button"
-                          onClick={() => setViewBookingDetails(null)}
-                          className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 text-2xl leading-none"
-                        >
-                          &times;
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            className="inline-flex items-center gap-1.5"
+                            onClick={() => {
+                              setViewBookingDetails(null);
+                              router.push(`/chat?bookingId=${viewBookingDetails.id}`);
+                            }}
+                          >
+                            <MessageCircle className="h-4 w-4" aria-hidden />
+                            Chat with employee
+                          </Button>
+                          <button
+                            type="button"
+                            onClick={() => setViewBookingDetails(null)}
+                            className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 text-2xl leading-none"
+                          >
+                            &times;
+                          </button>
+                        </div>
                       </div>
                       <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm mb-6">
                         <div>
