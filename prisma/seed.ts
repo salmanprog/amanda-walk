@@ -283,6 +283,23 @@ async function main() {
     sortOrder: 2,
   });
 
+   // MAIN SECTION - Users (Parent)
+   const usersModule = await findOrCreateModule({
+    name: "Users",
+    routeName: "#",
+    icon: "UserCircle",
+    sortOrder: sortOrder++,
+  });
+
+  // MAIN SECTION - Users (Parent)
+  const allUsersModule = await findOrCreateModule({
+    name: "All Users",
+    routeName: "/admin/users/",
+    icon: null,
+    parentId: usersModule.id,
+    sortOrder: 1,
+  });
+
   // MAIN SECTION - Employees (Parent)
   const employeesModule = await findOrCreateModule({
     name: "Employees",
@@ -347,6 +364,8 @@ async function main() {
     servicesModule,
     servicesCategoriesModule,
     allServicesModule,
+    usersModule,
+    allUsersModule,
     employeesModule,
     allEmployeesModule,
     bookingsModule,
@@ -358,6 +377,8 @@ async function main() {
     servicesModule,
     servicesCategoriesModule,
     allServicesModule,
+    usersModule,
+    allUsersModule,
     employeesModule,
     allEmployeesModule,
     bookingsModule,

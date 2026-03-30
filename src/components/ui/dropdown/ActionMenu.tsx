@@ -3,7 +3,19 @@ import { useState } from "react";
 import { Dropdown } from "./Dropdown";
 import { DropdownItem } from "./DropdownItem";
 
-export default function ActionMenu({ editUrl, viewUrl, onDelete }: any) {
+type MenuItem = { label: string; onClick: () => void };
+
+export default function ActionMenu({
+  editUrl,
+  viewUrl,
+  onDelete,
+  menuItems,
+}: {
+  editUrl?: string;
+  viewUrl?: string;
+  onDelete?: () => void;
+  menuItems?: MenuItem[];
+}) {
   const [open, setOpen] = useState(false);
 
   // Use viewUrl if provided, otherwise fallback to editUrl for backward compatibility
@@ -45,6 +57,22 @@ export default function ActionMenu({ editUrl, viewUrl, onDelete }: any) {
             {viewUrl ? "View" : "Edit"}
           </DropdownItem>
         )}
+
+        {menuItems?.map((item, i) => (
+          <DropdownItem
+            key={i}
+            tag="button"
+            onClick={() => {
+              setOpen(false);
+              item.onClick();
+            }}
+            className="text-xs font-medium text-gray-500 dark:text-gray-400 
+                       hover:bg-gray-100 hover:text-gray-700 
+                       dark:hover:bg-white/5 dark:hover:text-gray-300"
+          >
+            {item.label}
+          </DropdownItem>
+        ))}
 
         {/* Delete Action - only show if onDelete is provided */}
         {onDelete && (

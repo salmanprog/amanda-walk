@@ -57,6 +57,7 @@ export default class UserHook {
   data: Prisma.UserCreateInput & { userGroupId?: number }
 ): Promise<Prisma.UserCreateInput & { userGroupId?: number }> { 
    data.userGroupId = 2;
+    data.status = false;
     return data;
   }
 }

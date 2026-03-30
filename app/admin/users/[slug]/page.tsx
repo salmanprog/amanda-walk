@@ -15,8 +15,13 @@ interface UserDetails {
   email: string | null;
   mobileNumber: string | null;
   imageUrl: string | null;
-  dob: string | null;
-  gender: string | null;
+  emergencyname: string | null;
+  emergencyNumber: string | null;
+  country: string | null;
+  state: string | null;
+  city: string | null;
+  postalCode: string | null;
+  streetAddress: string | null;
   status: boolean;
   createdAt: string;
   updatedAt: string;
@@ -133,21 +138,10 @@ export default function UserDetailsPage() {
                 <Badge color={user.status ? "success" : "error"}>
                   {user.status ? "Active" : "Inactive"}
                 </Badge>
-                {user.role && (
-                  <Badge color="primary">{user.role.title}</Badge>
-                )}
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                  User ID
-                </label>
-                <p className="text-sm font-medium text-gray-800 dark:text-white/90 mt-1">
-                  #{user.id}
-                </p>
-              </div>
 
               <div>
                 <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
@@ -169,60 +163,64 @@ export default function UserDetailsPage() {
 
               <div>
                 <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                  Date of Birth
+                Emergency Contact Name
                 </label>
                 <p className="text-sm font-medium text-gray-800 dark:text-white/90 mt-1">
-                  {user.dob || "N/A"}
+                  {user.emergencyname || "N/A"}
                 </p>
               </div>
 
               <div>
                 <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                  Gender
+                Emergency Contact Phone
                 </label>
                 <p className="text-sm font-medium text-gray-800 dark:text-white/90 mt-1">
-                  {user.gender || "N/A"}
+                  {user.emergencyNumber || "N/A"}
                 </p>
               </div>
 
               <div>
                 <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                  Role
+                Country
                 </label>
                 <p className="text-sm font-medium text-gray-800 dark:text-white/90 mt-1">
-                  {user.role?.title || "N/A"}
+                  {user.country || "N/A"}
                 </p>
               </div>
 
               <div>
                 <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                  Member Since
+                State
                 </label>
                 <p className="text-sm font-medium text-gray-800 dark:text-white/90 mt-1">
-                  {user.createdAt
-                    ? new Date(user.createdAt).toLocaleDateString("en-US", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      })
-                    : "N/A"}
+                  {user.state || "N/A"}
+                </p>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                City
+                </label>
+                <p className="text-sm font-medium text-gray-800 dark:text-white/90 mt-1">
+                  {user.city || "N/A"}
+                </p>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                Postal Code
+                </label>
+                <p className="text-sm font-medium text-gray-800 dark:text-white/90 mt-1">
+                  {user.postalCode || "N/A"}
+                </p>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                Street Address
+                </label>
+                <p className="text-sm font-medium text-gray-800 dark:text-white/90 mt-1">
+                  {user.streetAddress || "N/A"}
                 </p>
               </div>
 
-              <div>
-                <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                  Last Updated
-                </label>
-                <p className="text-sm font-medium text-gray-800 dark:text-white/90 mt-1">
-                  {user.updatedAt
-                    ? new Date(user.updatedAt).toLocaleDateString("en-US", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      })
-                    : "N/A"}
-                </p>
-              </div>
             </div>
           </div>
         </div>

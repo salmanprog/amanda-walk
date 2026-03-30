@@ -14,6 +14,7 @@ interface User {
   slug: string;
   email: string;
   imageUrl: string | null;
+  status: boolean;
   role: {
     id: number;
     title: string;
@@ -23,6 +24,7 @@ interface User {
 
 export default function UserList() {
   const [users, setUsers] = useState<User[]>([]);
+  const [statusUpdatingId, setStatusUpdatingId] = useState<number | null>(null);
   const { data, loading, fetchApi } = useApi({
     url: "/api/admin/users",
     method: "GET",
@@ -43,7 +45,39 @@ export default function UserList() {
       setUsers(data);
     }
   }, [data]);
-  
+
+  const toggleUserStatus = async (user: User) => {
+    if (statusUpdatingId !== null) return;
+    const token =
+      typeof window !== "undefined"
+        ? localStorage.getItem("token") || sessionStorage.getItem("token") || ""
+        : "";
+    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "";
+    const nextStatus = !user.status;
+    setStatusUpdatingId(user.id);
+    try {
+      const res = await fetch(
+        `${baseUrl}/api/admin/users/${encodeURIComponent(user.slug)}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ status: nextStatus }),
+        }
+      );
+      const json = await res.json();
+      if (res.ok && json?.code === 200) {
+        setUsers((prev) =>
+          prev.map((u) => (u.id === user.id ? { ...u, status: nextStatus } : u))
+        );
+      }
+    } finally {
+      setStatusUpdatingId(null);
+    }
+  };
+
   return (
     <>
     <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white px-4 pb-3 pt-4 dark:border-gray-800 dark:bg-white/[0.03] sm:px-6">
@@ -124,7 +158,7 @@ export default function UserList() {
                 isHeader
                 className="py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
               >
-                Role
+                Status
               </TableCell>
               <TableCell
                 isHeader
@@ -173,11 +207,24 @@ export default function UserList() {
                     {user.email || "N/A"}
                   </TableCell>
                   <TableCell className="py-3 text-gray-500 text-theme-sm dark:text-gray-400">
-                    {user.role?.title || "N/A"}
+                    <Badge color={user.status ? "success" : "error"}>
+                      {user.status ? "Active" : "Inactive"}
+                    </Badge>
                   </TableCell>
                   <TableCell className="py-3 text-center">
                     <ActionMenu
                       viewUrl={`/admin/users/${user.slug}`}
+                      menuItems={[
+                        {
+                          label:
+                            statusUpdatingId === user.id
+                              ? "Updating…"
+                              : user.status
+                                ? "Deactivate"
+                                : "Activate",
+                          onClick: () => void toggleUserStatus(user),
+                        },
+                      ]}
                     />
                   </TableCell>
                 </TableRow>

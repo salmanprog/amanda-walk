@@ -281,6 +281,21 @@ CREATE TABLE `booking_schedules` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
+CREATE TABLE `booking_chat_messages` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `bookingId` INTEGER NOT NULL,
+    `senderId` INTEGER NOT NULL,
+    `receiverId` INTEGER NULL,
+    `message` TEXT NOT NULL,
+    `createdAt` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+
+    INDEX `booking_chat_messages_bookingId_idx`(`bookingId`),
+    INDEX `booking_chat_messages_senderId_idx`(`senderId`),
+    INDEX `booking_chat_messages_receiverId_idx`(`receiverId`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
 CREATE TABLE `pet_type` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `name` VARCHAR(150) NOT NULL,
@@ -374,6 +389,15 @@ ALTER TABLE `booking_schedules` ADD CONSTRAINT `booking_schedules_serviceCategor
 
 -- AddForeignKey
 ALTER TABLE `booking_schedules` ADD CONSTRAINT `booking_schedules_serviceId_fkey` FOREIGN KEY (`serviceId`) REFERENCES `services`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `booking_chat_messages` ADD CONSTRAINT `booking_chat_messages_bookingId_fkey` FOREIGN KEY (`bookingId`) REFERENCES `bookings`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `booking_chat_messages` ADD CONSTRAINT `booking_chat_messages_senderId_fkey` FOREIGN KEY (`senderId`) REFERENCES `User`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `booking_chat_messages` ADD CONSTRAINT `booking_chat_messages_receiverId_fkey` FOREIGN KEY (`receiverId`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `pets` ADD CONSTRAINT `pets_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;

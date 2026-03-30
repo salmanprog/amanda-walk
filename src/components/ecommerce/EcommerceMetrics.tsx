@@ -1,18 +1,53 @@
 "use client";
-import React from "react";
+import React, { useEffect } from "react";
 import { ArrowUpIcon, GroupIcon, DollarSign, TrendingUp } from "lucide-react";
+import useApi from "@/utils/useApi";
 
 export const EcommerceMetrics = () => {
+  const { data: metricsData, fetchApi } = useApi({
+    url: "/api/admin/dashboard-metrics",
+    method: "GET",
+    type: "manual",
+    requiresAuth: true,
+  });
+
+  useEffect(() => {
+    void fetchApi();
+  }, []);
+
   // Format number with commas
   const formatNumber = (num: number) => {
     return num.toLocaleString();
   };
 
-  // Static data
-  const completeServices = 1250;
-  const pendingServices = 450;
-  const revenueOfServices = 12500;
-  const profitOfServices = 45000;
+  const totalClients =
+    metricsData &&
+    typeof metricsData === "object" &&
+    "totalClients" in metricsData &&
+    typeof (metricsData as { totalClients: unknown }).totalClients === "number"
+      ? (metricsData as { totalClients: number }).totalClients
+      : 0;
+  const totalEmployees =
+    metricsData &&
+    typeof metricsData === "object" &&
+    "totalEmployees" in metricsData &&
+    typeof (metricsData as { totalEmployees: unknown }).totalEmployees === "number"
+      ? (metricsData as { totalEmployees: number }).totalEmployees
+      : 0;
+  const totalBookings =
+    metricsData &&
+    typeof metricsData === "object" &&
+    "totalBookings" in metricsData &&
+    typeof (metricsData as { totalBookings: unknown }).totalBookings === "number"
+      ? (metricsData as { totalBookings: number }).totalBookings
+      : 0;
+  const totalServices =
+    metricsData &&
+    typeof metricsData === "object" &&
+    "totalServices" in metricsData &&
+    typeof (metricsData as { totalServices: unknown }).totalServices === "number"
+      ? (metricsData as { totalServices: number }).totalServices
+      : 0;
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 md:gap-6">
@@ -24,10 +59,10 @@ export const EcommerceMetrics = () => {
         <div className="flex items-end justify-between mt-5">
           <div>
             <span className="text-sm text-gray-500 dark:text-gray-400">
-              Complete Services
+              Total Clients
             </span>
             <h4 className="mt-2 font-bold text-gray-800 text-title-sm dark:text-white/90">
-              {formatNumber(completeServices)}
+              {formatNumber(totalClients)}
             </h4>
           </div>
         </div>
@@ -41,10 +76,10 @@ export const EcommerceMetrics = () => {
         <div className="flex items-end justify-between mt-5">
           <div>
             <span className="text-sm text-gray-500 dark:text-gray-400">
-              Pending Services
+              Total Employees
             </span>
             <h4 className="mt-2 font-bold text-gray-800 text-title-sm dark:text-white/90">
-              {formatNumber(pendingServices)}
+              {formatNumber(totalEmployees)}
             </h4>
           </div>
         </div>
@@ -58,10 +93,10 @@ export const EcommerceMetrics = () => {
         <div className="flex items-end justify-between mt-5">
           <div>
             <span className="text-sm text-gray-500 dark:text-gray-400">
-              Revenue Of Services
+              Total Bookings
             </span>
             <h4 className="mt-2 font-bold text-gray-800 text-title-sm dark:text-white/90">
-              ${formatNumber(revenueOfServices)}
+              {formatNumber(totalBookings)}
             </h4>
           </div>
         </div>
@@ -75,10 +110,10 @@ export const EcommerceMetrics = () => {
         <div className="flex items-end justify-between mt-5">
           <div>
             <span className="text-sm text-gray-500 dark:text-gray-400">
-              Profit's of Services
+              Total Services
             </span>
             <h4 className="mt-2 font-bold text-gray-800 text-title-sm dark:text-white/90">
-              ${formatNumber(profitOfServices)}
+              {formatNumber(totalServices)}
             </h4>
           </div>
         </div>

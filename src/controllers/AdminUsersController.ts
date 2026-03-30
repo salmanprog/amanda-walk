@@ -77,13 +77,17 @@ export default class AdminUsersController extends RestController<
   }
 
   protected async beforeUpdate(): Promise<void | NextResponse> {
-    const current_user = this.requireUser();
-    const idParam = this.getRouteParam();
-    const routeId = idParam ? parseInt(idParam.toString(), 10) : 0;
-    if (parseInt(current_user.id, 10) !== routeId) {
-      return this.sendError("Validation failed", { authentication: "You can't update another user's profile" }, 422);
+    this.requireUser();
+    const slug = this.getRouteParam();
+    if (slug) {
+      const target = await prisma.user.findFirst({
+        where: { slug: String(slug), deletedAt: null },
+      });
+      if (!target || target.userGroupId !== 2) {
+        return this.sendError("Validation failed", { user: "User not found" }, 404);
+      }
     }
-    
+
     const image = this.data?.image;
     if (image && !/\.(jpg|jpeg|png)$/i.test(image)) {
       return this.sendError("Invalid image format", { image: "Only JPG/PNG allowed" }, 422);

@@ -111,13 +111,20 @@ export default class UsersController extends RestController<
         return this.sendError("Invalid credentials", {password_error: "Password does not match."}, 400);
       }
 
+      if (user.status === false || Number(user.status) === 0) {
+        return this.sendError(
+          "Your account is not active yet. Please wait for admin approval.",
+          { status_error: "Waiting for admin approval." },
+          400
+        );
+      }
       await createUserToken(
         user.id,
         "web"
       );
       const loginuser = await prisma.user.findUnique({ where: { email }, include: {userRole: true,apiTokens: true,}, });
       const extendedUser = loginuser as ExtendedUser;
-
+      
       return this.__sendResponse(200, "Login successful", extendedUser);
     } catch (err) {
       return this.sendError((err as Error).message, {}, 500);

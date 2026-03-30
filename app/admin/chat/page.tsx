@@ -152,28 +152,28 @@ function AdminChatPageContent() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-8rem)] flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-800/30">
-      {/* Header */}
-      <div className="flex shrink-0 items-center gap-3 border-b border-gray-200 bg-gray-50/80 px-4 py-3 dark:border-gray-700 dark:bg-gray-800/50">
+    <div className="flex h-[calc(100vh-8rem)] flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-800/30">
+      {/* Header – modern font, aligned with brand */}
+      <header className="flex shrink-0 items-center gap-3 border-b border-gray-200 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-800/50">
         <Link
           href={`/admin/employee-bookings/edit/${bookingIdNum}`}
-          className="rounded-lg p-1.5 text-gray-600 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700"
+          className="rounded-lg p-1.5 text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white"
           aria-label="Back to booking"
         >
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-lg font-semibold text-gray-900 dark:text-white">
-            {bookingLabel} — {userName}
+          <h1 className="truncate text-xl font-medium tracking-tight text-gray-900 dark:text-white" style={{ fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif" }}>
+            {bookingLabel} – {userName}
           </h1>
           <p className="truncate text-xs text-gray-500 dark:text-gray-400">
             One-to-one chat for this booking
           </p>
         </div>
-      </div>
+      </header>
 
-      {/* Messages - chat thread centered in the div */}
-      <div className="flex-1 overflow-y-auto p-4 flex flex-col items-center" style={{ backgroundColor: '#45589d' }}>
+      {/* Chat window – soft background, bubble layout */}
+      <div className="flex-1 overflow-y-auto bg-gray-100/80 p-4 flex flex-col items-center transition-opacity duration-200 dark:bg-gray-900/30">
         {chatError ? (
           <p className="text-center text-sm text-red-600 dark:text-red-400">{chatError}</p>
         ) : loadingChat && !hasLoadedOnce ? (
@@ -183,51 +183,54 @@ function AdminChatPageContent() {
         ) : displayMessages.length === 0 ? (
           <p className="text-center text-sm text-gray-500 dark:text-gray-400">No messages yet. Start the conversation.</p>
         ) : (
-          <ul className="space-y-4 w-full max-w-2xl mx-auto">
+          <ul className="space-y-3 w-full max-w-2xl mx-auto">
             {displayMessages.map((m, idx) => {
               const isMe = m.senderId === displayUserId;
-              const senderName = (m.sender && typeof m.sender === "object" ? (m.sender as ChatUser).name : null) ?? "—";
-              const receiverName = (m.receiver && typeof m.receiver === "object" ? (m.receiver as ChatUser).name : null) ?? "—";
+              const senderName = (m.sender && typeof m.sender === "object" ? m.sender.name : null) ?? "—";
+              const receiverName = (m.receiver && typeof m.receiver === "object" ? m.receiver.name : null) ?? "—";
               const displayName = isMe ? "You" : senderName;
               const timeStr = m.createdAt ? new Date(m.createdAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }) : "";
 
               return (
                 <li
                   key={m.id ?? `msg-${idx}`}
-                  className={`flex gap-2 ${isMe ? "flex-row-reverse" : "flex-row"} items-end max-w-[90%] ${isMe ? "ml-auto" : "mr-auto"}`}
+                  className={`flex gap-3 ${isMe ? "flex-row-reverse is-me" : "flex-row is-sender"} items-end max-w-[85%] sm:max-w-[90%] ${isMe ? "ml-auto" : "mr-auto"} transition-opacity duration-200`}
                 >
+                  {/* Avatar/Image comes first */}
                   <AvatarText
                     name={isMe ? "You" : senderName}
-                    className={`shrink-0 h-9 w-9 text-xs ${isMe ? "order-2" : "order-1"}`}
+                    className={`shrink-0 h-10 w-10 text-xs ${isMe ? "order-1" : "order-1"}`}
                   />
-                  <div className={`flex flex-col gap-0.5 min-w-0 ${isMe ? "items-end order-1" : "items-start order-2"}`}>
-                    <div className="flex items-center gap-2 px-1">
-                      <span className="text-xs font-semibold text-gray-700 dark:text-gray-200 truncate max-w-[120px]" title={displayName}>
+                  
+                  {/* Message content comes second */}
+                  <div className={`flex flex-col gap-1 min-w-0 ${isMe ? "items-end order-2" : "items-start order-2"}`}>
+                    <div className="flex items-baseline gap-2 px-1 flex-wrap">
+                      <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate max-w-[120px]" title={displayName}>
                         {displayName}
                       </span>
                       {timeStr && (
-                        <span className="text-[10px] text-gray-400 dark:text-gray-500 shrink-0">{timeStr}</span>
+                        <span className="text-[10px] text-gray-500 dark:text-gray-400 shrink-0">{timeStr}</span>
                       )}
                     </div>
                     <div
-                      className={`rounded-2xl px-4 py-2.5 shadow-sm max-w-full ${
+                      className={`rounded-2xl px-4 py-3 shadow-lg max-w-full transition-colors duration-150 ${
                         isMe
-                          ? "bg-primary text-white rounded-br-md"
-                          : "bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-gray-100 rounded-bl-md"
+                          ? "bg-[#b8a9c9] text-gray-900 rounded-br-md hover:bg-[#a898b8] dark:bg-[#9b8aad] dark:hover:bg-[#8a7a9d]"
+                          : "bg-[#5b7cba] text-white rounded-bl-md dark:bg-[#4a6aa8] dark:hover:bg-[#5b7cba]"
                       }`}
                     >
-                      <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">{String(m.message ?? "")}</p>
+                      <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-inherit">{String(m.message ?? "")}</p>
                     </div>
                   </div>
                 </li>
               );
             })}
             {sending && (
-              <li className="flex gap-2 flex-row-reverse items-end max-w-[90%] ml-auto">
-                <AvatarText name="You" className="shrink-0 h-9 w-9 text-xs" />
-                <div className="flex flex-col gap-0.5 items-end">
-                  <span className="text-xs font-semibold text-gray-700 dark:text-gray-200">You</span>
-                  <span className="rounded-2xl rounded-br-md bg-gray-200 px-4 py-2.5 text-sm text-gray-500 dark:bg-gray-600 dark:text-gray-300">
+              <li className="flex gap-3 flex-row-reverse items-end max-w-[85%] sm:max-w-[90%] ml-auto animate-pulse">
+                <AvatarText name="You" className="shrink-0 h-10 w-10 text-xs" />
+                <div className="flex flex-col gap-1 items-end">
+                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">You</span>
+                  <span className="rounded-2xl rounded-br-md bg-[#b8a9c9] px-4 py-3 text-sm text-gray-700 dark:bg-[#9b8aad] dark:text-gray-200">
                     Sending…
                   </span>
                 </div>
@@ -240,34 +243,44 @@ function AdminChatPageContent() {
         )}
       </div>
 
-      {/* Input */}
+      {/* Input area – text area + Send (blue/purple, hover) */}
       {isViewOnly ? (
-        <div className="flex shrink-0 gap-2 border-t border-gray-200 bg-gray-50/80 p-3 dark:border-gray-700 dark:bg-gray-800/50">
+        <div className="flex shrink-0 gap-2 border-t border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-800/50">
           <p className="text-sm text-gray-500 dark:text-gray-400">You are viewing this chat as a customer. You cannot send messages.</p>
         </div>
       ) : (
       <form
         onSubmit={handleSend}
-        className="flex shrink-0 gap-2 border-t border-gray-200 bg-gray-50/80 p-3 dark:border-gray-700 dark:bg-gray-800/50"
+        className="flex shrink-0 gap-2 border-t border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-800/50"
       >
-        <input
-          type="text"
+        <textarea
           value={inputMessage}
           onChange={(e) => setInputMessage(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              handleSend(e as unknown as React.FormEvent);
+            }
+          }}
           placeholder="Type a message…"
-          className="flex-1 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder-gray-500 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400"
+          rows={1}
+          className="min-h-[44px] max-h-32 flex-1 resize-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-500 transition-colors focus:border-[#5b7cba] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#5b7cba] dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400 dark:focus:border-[#5b7cba] dark:focus:ring-[#5b7cba]"
           disabled={sending || !isValidBooking}
         />
-        <Button
+        <button
           type="submit"
-          variant="primary"
           disabled={!inputMessage.trim() || sending || !isValidBooking}
-          loading={sending}
-          className="inline-flex items-center gap-2"
+          className="inline-flex h-[44px] shrink-0 items-center justify-center gap-2 rounded-xl bg-[#5b7cba] px-5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[#4a6aa8] focus:outline-none focus:ring-2 focus:ring-[#5b7cba] focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none dark:bg-[#4a6aa8] dark:hover:bg-[#5b7cba] dark:focus:ring-[#5b7cba]"
         >
-          <Send className="h-4 w-4" aria-hidden />
-          Send
-        </Button>
+          {sending ? (
+            <span className="text-sm">Sending…</span>
+          ) : (
+            <>
+              <Send className="h-4 w-4" aria-hidden />
+              Send
+            </>
+          )}
+        </button>
       </form>
       )}
     </div>

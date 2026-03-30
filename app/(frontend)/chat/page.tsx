@@ -184,7 +184,7 @@ function ChatPageContent() {
               return (
                 <li
                   key={m.id ?? `msg-${idx}`}
-                  className={`flex gap-2 ${isMe ? "flex-row-reverse" : "flex-row"} items-end max-w-[90%] ${isMe ? "ml-auto" : "mr-auto"}`}
+                  className={`flex gap-2 ${isMe ? "flex-row-reverse is-me" : "flex-row is-sender"} items-end max-w-[90%] ${isMe ? "ml-auto" : "mr-auto"}`}
                 >
                   <AvatarText
                     name={isMe ? "You" : senderName}

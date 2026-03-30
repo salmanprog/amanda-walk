@@ -19,6 +19,7 @@ export const storeUser = yup.object({
 export const updateUser = yup.object({
   name: yup.string().min(2).max(20).optional(),
   mobileNumber: yup.string().optional().nullable(),
+  status: yup.boolean().optional(),
   referedBy: yup.string().optional(),
   vetName: yup.string().optional(),
   streetAddress: yup.string().optional(),
