@@ -65,6 +65,7 @@ const navItems: NavItem[] = [
     name: 'Bookings',
     subItems: [
       { name: 'All Bookings', path: '#', pro: false },
+      { name: 'Schedule Slots', path: '/admin/schedule-slots/', pro: false },
     ],
   },
   {

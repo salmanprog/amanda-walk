@@ -129,10 +129,67 @@ export default class AdminBookingController extends RestController<
   }
 
   // ------------------- UPDATE / DELETE -------------------
-  protected async beforeUpdate(): Promise<void | NextResponse> {}
+  protected async beforeUpdate(): Promise<void | NextResponse> {
+    const raw = this.data as Record<string, unknown>;
+    if (Object.prototype.hasOwnProperty.call(raw, "scheduleSlot")) {
+      (this as { _scheduleSlotToPersist?: unknown })._scheduleSlotToPersist =
+        raw.scheduleSlot;
+      delete raw.scheduleSlot;
+    } else {
+      (this as { _scheduleSlotToPersist?: unknown })._scheduleSlotToPersist =
+        undefined;
+    }
+  }
 
   protected async afterUpdate(record: ExtendedBooking): Promise<ExtendedBooking> {
-    return record;
+    const slot = (this as { _scheduleSlotToPersist?: unknown })
+      ._scheduleSlotToPersist;
+    if (slot !== undefined && record.id != null) {
+      const empId =
+        record.assignedTo != null ? Number(record.assignedTo) : null;
+      let value: string | null = null;
+      if (slot === null) {
+        value = null;
+      } else {
+        const s = String(slot).trim();
+        value = s === "" ? null : s.slice(0, 20);
+      }
+      const baseWhere = {
+        bookingId: record.id,
+        deletedAt: null,
+      };
+      const empOk =
+        empId != null && !Number.isNaN(empId) && Number.isFinite(empId);
+      if (empOk) {
+        const matchEmp = await prisma.bookingSchedule.count({
+          where: { ...baseWhere, employeeId: empId },
+        });
+        if (matchEmp > 0) {
+          await prisma.bookingSchedule.updateMany({
+            where: { ...baseWhere, employeeId: empId },
+            data: { scheduleSlot: value },
+          });
+        } else {
+          await prisma.bookingSchedule.updateMany({
+            where: baseWhere,
+            data: { scheduleSlot: value },
+          });
+        }
+      } else {
+        await prisma.bookingSchedule.updateMany({
+          where: baseWhere,
+          data: { scheduleSlot: value },
+        });
+      }
+    }
+    let showQuery: Record<string, unknown> = {
+      where: { id: record.id, deletedAt: null },
+    };
+    showQuery = await AdminBookingHook.showQueryHook(showQuery, {});
+    const fresh = await prisma.booking.findUnique(
+      showQuery as Prisma.BookingFindUniqueArgs
+    );
+    return (fresh ?? record) as ExtendedBooking;
   }
 
   protected async beforeDestroy(): Promise<void | NextResponse> {

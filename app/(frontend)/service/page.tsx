@@ -11,13 +11,11 @@ import useAuthGuard from "@/hooks/useAuthGuard";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
-// Mock data for time slots
-const timeSlots = [
-  "09:00 AM", "09:30 AM", "10:00 AM", "10:30 AM",
-  "11:00 AM", "11:30 AM", "12:00 PM", "12:30 PM",
-  "01:00 PM", "01:30 PM", "02:00 PM", "02:30 PM",
-  "03:00 PM", "03:30 PM", "04:00 PM", "04:30 PM"
-];
+interface ScheduleSlotOption {
+  id: number;
+  slug: string;
+  label: string;
+}
 
 interface Appointment {
   id: string;
@@ -59,6 +57,8 @@ export default function ServicePage() {
   const [servicesCategories, setServicesCategories] = useState<ServiceCategoryFromApi[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [scheduleSlots, setScheduleSlots] = useState<ScheduleSlotOption[]>([]);
+  const [loadingScheduleSlots, setLoadingScheduleSlots] = useState(false);
   const router = useRouter();
 
   // API hooks to fetch data
@@ -90,6 +90,13 @@ export default function ServicePage() {
     requiresAuth: true,
   });
 
+  const { fetchApi: fetchScheduleSlots } = useApi({
+    url: "/api/users/schedule-slots",
+    method: "GET",
+    type: "manual",
+    requiresAuth: true,
+  });
+
   // Fetch pets
   useEffect(() => {
     const loadPets = async () => {
@@ -107,6 +114,24 @@ export default function ServicePage() {
     };
 
     loadPets();
+  }, []);
+
+  useEffect(() => {
+    const loadScheduleSlots = async () => {
+      setLoadingScheduleSlots(true);
+      try {
+        const res = await fetchScheduleSlots();
+        if (res.code === 200 && res.data && Array.isArray(res.data)) {
+          setScheduleSlots(res.data as ScheduleSlotOption[]);
+        }
+      } catch (err: unknown) {
+        console.error("Failed to load schedule slots:", err);
+        toast.error("Failed to load time slots");
+      } finally {
+        setLoadingScheduleSlots(false);
+      }
+    };
+    void loadScheduleSlots();
   }, []);
 
   // Fetch services categories from GET /api/users/services-categories
@@ -411,26 +436,38 @@ export default function ServicePage() {
             </h2>
             <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 h-[380px] overflow-y-auto custom-scrollbar">
               <div className="grid grid-cols-2 gap-3">
-                {timeSlots.map((time) => {
-                  // Check if this specific slot is selected for the CURRENT viewed date
-                  const isSelected = selectedDate && appointments.some(
-                    (a) => a.date.toDateString() === selectedDate.toDateString() && a.time === time
-                  );
+                {loadingScheduleSlots ? (
+                  <p className="col-span-2 text-center text-sm text-gray-500 py-6">Loading time slots…</p>
+                ) : scheduleSlots.length === 0 ? (
+                  <p className="col-span-2 text-center text-sm text-gray-500 py-6">
+                    No time slots available.
+                  </p>
+                ) : (
+                  scheduleSlots.map((slot) => {
+                    const time = slot.label;
+                    const isSelected =
+                      selectedDate &&
+                      appointments.some(
+                        (a) =>
+                          a.date.toDateString() === selectedDate.toDateString() && a.time === time
+                      );
 
-                  return (
-                    <button
-                      key={time}
-                      onClick={() => handleTimeSelect(time)}
-                      className={`py-3 px-4 rounded-xl text-sm font-medium transition-all duration-200 border ${
-                        isSelected
-                          ? "bg-[var(--primary-theme)] text-white border-[var(--primary-theme)] shadow-md"
-                          : "bg-[#F8FAFC] text-gray-600 border-transparent hover:bg-gray-100"
-                      }`}
-                    >
-                      {time}
-                    </button>
-                  );
-                })}
+                    return (
+                      <button
+                        key={slot.slug}
+                        type="button"
+                        onClick={() => handleTimeSelect(time)}
+                        className={`py-3 px-4 rounded-xl text-sm font-medium transition-all duration-200 border ${
+                          isSelected
+                            ? "bg-[var(--primary-theme)] text-white border-[var(--primary-theme)] shadow-md"
+                            : "bg-[#F8FAFC] text-gray-600 border-transparent hover:bg-gray-100"
+                        }`}
+                      >
+                        {time}
+                      </button>
+                    );
+                  })
+                )}
               </div>
             </div>
           </div>

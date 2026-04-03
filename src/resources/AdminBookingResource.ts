@@ -19,11 +19,13 @@ export type ExtendedBooking = {
   deletedAt?: Date | null;
   user?: { name?: string | null; lname?: string | null; email?: string | null; mobileNumber?: string | null } | null;
   category?: { title?: string } | null;
-  service?: { title?: string } | null;
+  service?: { title?: string; mints?: string } | null;
   schedules?: Array<{
     id?: number;
+    employeeId: number;
     scheduleDate: Date;
     scheduleTime: string;
+    scheduleSlot?: string | null;
     isStarted: boolean;
     isCompleted: boolean;
   }>;
@@ -40,11 +42,16 @@ export default class AdminBookingResource extends BaseResource<ExtendedBooking> 
     const userPhone = booking.user?.mobileNumber ?? "—";
     const categoryName = booking.category?.title ?? "—";
     const serviceName = booking.service?.title ?? "—";
+    const mintsRaw = booking.service?.mints;
+    const mintsStr = mintsRaw != null ? String(mintsRaw).trim() : "";
+    const serviceMints = mintsStr !== "" ? mintsStr : null;
     const firstSchedule = booking.schedules?.[0];
     const schedules = (booking.schedules ?? []).map((s) => ({
       id: (s as { id?: number }).id,
+      employeeId: s.employeeId,
       scheduleDate: s.scheduleDate,
       scheduleTime: s.scheduleTime,
+      scheduleSlot: (s as { scheduleSlot?: string | null }).scheduleSlot ?? null,
       isStarted: s.isStarted,
       isCompleted: s.isCompleted,
     }));
@@ -59,6 +66,7 @@ export default class AdminBookingResource extends BaseResource<ExtendedBooking> 
       userPhone,
       categoryName,
       serviceName,
+      serviceMints,
       quantity: booking.quantity,
       tax: booking.tax,
       discount: booking.discount,

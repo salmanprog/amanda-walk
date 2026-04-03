@@ -23,10 +23,17 @@ export default class AdminBookingHook {
     query.include = {
       user: { select: { name: true, lname: true } },
       category: { select: { title: true } },
-      service: { select: { title: true } },
+      service: { select: { title: true, mints: true } },
       schedules: {
         where: { deletedAt: null },
-        select: { scheduleDate: true, scheduleTime: true, isStarted: true, isCompleted: true },
+        select: {
+          employeeId: true,
+          scheduleDate: true,
+          scheduleTime: true,
+          scheduleSlot: true,
+          isStarted: true,
+          isCompleted: true,
+        },
         orderBy: { scheduleDate: "asc" },
       },
     };
@@ -42,10 +49,18 @@ export default class AdminBookingHook {
     query.include = {
       user: { select: { name: true, lname: true, email: true, mobileNumber: true } },
       category: { select: { title: true } },
-      service: { select: { title: true } },
+      service: { select: { title: true, mints: true } },
       schedules: {
         where: { deletedAt: null },
-        select: { id: true, scheduleDate: true, scheduleTime: true, isStarted: true, isCompleted: true },
+        select: {
+          id: true,
+          employeeId: true,
+          scheduleDate: true,
+          scheduleTime: true,
+          scheduleSlot: true,
+          isStarted: true,
+          isCompleted: true,
+        },
         orderBy: { scheduleDate: "asc" },
       },
     };

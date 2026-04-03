@@ -63,6 +63,13 @@ export default class AdminServiceController extends RestController<
     if (this.data?.price !== undefined) {
       this.data.price = Number(this.data.price);
     }
+    if (this.data) {
+      if (this.data.mints === undefined || this.data.mints === null) {
+        this.data.mints = "";
+      } else {
+        this.data.mints = String(this.data.mints);
+      }
+    }
   }
 
   protected async afterStore(record: ExtendedAdminService): Promise<ExtendedAdminService> {
@@ -78,6 +85,9 @@ export default class AdminServiceController extends RestController<
     }
     if (this.data?.price !== undefined) {
       this.data.price = Number(this.data.price);
+    }
+    if (this.data?.mints !== undefined && this.data.mints !== null) {
+      this.data.mints = String(this.data.mints);
     }
   }
 

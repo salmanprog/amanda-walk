@@ -130,6 +130,7 @@ export const storeService = yup.object({
   description: yup.string().optional(),
   seoTitle: yup.string().optional(),
   seoDescription: yup.string().optional(),
+  mints: yup.string().optional(),
 });
 
 export const updateService = yup.object({
@@ -138,6 +139,7 @@ export const updateService = yup.object({
   description: yup.string().optional(),
   seoTitle: yup.string().optional(),
   seoDescription: yup.string().optional(),
+  mints: yup.string().optional(),
 });
 
 export const storeEmployeeService = yup.object({
@@ -167,6 +169,8 @@ export const updateBooking = yup.object({
   discount: yup.string().optional(),
   totalPrice: yup.string().optional(),
   status: yup.string().oneOf(["PENDING", "CONFIRMED", "COMPLETED", "CANCELLED"]).optional(),
+  assignedTo: yup.number().integer().nullable().optional(),
+  scheduleSlot: yup.string().max(20).nullable().optional(),
 });
 
 export const storePetType = yup.object({
@@ -175,6 +179,23 @@ export const storePetType = yup.object({
 
 export const updatePetType = yup.object({
   name: yup.string().required("Pet type name is required"),
+});
+
+export const storeScheduleSlot = yup.object({
+  startTime: yup.string().required("Start time is required"),
+  startAmPM: yup.string().required("Start AM/PM is required"),
+  endTime: yup.string().required("End time is required"),
+  endAmPM: yup.string().required("End AM/PM is required"),
+  status: yup.string().optional(),
+});
+
+export const updateScheduleSlot = yup.object({
+  slug: yup.string().optional(),
+  startTime: yup.string().optional(),
+  startAmPM: yup.string().optional(),
+  endTime: yup.string().optional(),
+  endAmPM: yup.string().optional(),
+  status: yup.string().optional(),
 });
 
 export const storePet = yup.object({

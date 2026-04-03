@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { MessageCircle } from "lucide-react";
 import Button from "@/components/ui/button/Button";
@@ -10,10 +10,112 @@ import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components
 
 const BOOKING_STATUSES = ["PENDING", "CONFIRMED", "COMPLETED", "CANCELLED"] as const;
 
+function displayServiceMints(booking: unknown): string {
+  if (booking == null || typeof booking !== "object") return "—";
+  const b = booking as Record<string, unknown>;
+  const nested =
+    b.service != null && typeof b.service === "object" && "mints" in b.service
+      ? (b.service as { mints?: unknown }).mints
+      : undefined;
+  const raw = b.serviceMints ?? b.service_mints ?? nested;
+  const s = raw != null ? String(raw).trim() : "";
+  return s !== "" ? s : "—";
+}
+
+function parseMintsMinutesFromBooking(booking: unknown): number | null {
+  const label = displayServiceMints(booking);
+  if (label === "—") return null;
+  const m = label.match(/\d+/);
+  if (!m) return null;
+  const n = parseInt(m[0], 10);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+function formatSlotTime(d: Date): string {
+  return d.toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
+
+function parseTimeToToday(fragment: string): Date | null {
+  const ref = new Date();
+  ref.setHours(0, 0, 0, 0);
+  const t = fragment.trim();
+  const m12 = t.match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)$/i);
+  if (m12) {
+    let h = parseInt(m12[1], 10);
+    const min = m12[2] ? parseInt(m12[2], 10) : 0;
+    const ap = m12[3].toUpperCase();
+    if (ap === "PM" && h !== 12) h += 12;
+    if (ap === "AM" && h === 12) h = 0;
+    if (h > 23 || min > 59) return null;
+    const d = new Date(ref);
+    d.setHours(h, min, 0, 0);
+    return d;
+  }
+  const m24 = t.match(/^(\d{1,2}):(\d{2})$/);
+  if (m24) {
+    const h = parseInt(m24[1], 10);
+    const min = parseInt(m24[2], 10);
+    if (h > 23 || min > 59) return null;
+    const d = new Date(ref);
+    d.setHours(h, min, 0, 0);
+    return d;
+  }
+  return null;
+}
+
+function parseTimeRange(scheduleTime: string): { start: Date; end: Date } | null {
+  const m = scheduleTime.trim().match(/^(.+?)\s*[-–—]\s*(.+)$/);
+  if (!m) return null;
+  const start = parseTimeToToday(m[1].trim());
+  const end = parseTimeToToday(m[2].trim());
+  if (!start || !end) return null;
+  const endAdj = new Date(end.getTime());
+  if (endAdj <= start) endAdj.setDate(endAdj.getDate() + 1);
+  return { start, end: endAdj };
+}
+
+function buildSubSlots(start: Date, end: Date, stepMinutes: number): string[] {
+  const out: string[] = [];
+  const stepMs = stepMinutes * 60 * 1000;
+  let cur = new Date(start.getTime());
+  const endMs = end.getTime();
+  while (cur.getTime() < endMs) {
+    const next = new Date(cur.getTime() + stepMs);
+    if (next.getTime() > endMs) break;
+    out.push(`${formatSlotTime(cur)} - ${formatSlotTime(next)}`);
+    cur = next;
+  }
+  return out;
+}
+
+/** Map DB `scheduleSlot` (may be truncated) to the exact `lines[]` label for radios. */
+function matchSavedSlotToLine(
+  saved: string | null | undefined,
+  lines: string[]
+): string | null {
+  if (saved == null || lines.length === 0) return null;
+  const s = String(saved).trim();
+  if (!s) return null;
+  if (lines.includes(s)) return s;
+  const compact = (x: string) => x.replace(/\s+/g, "").toLowerCase();
+  const sc = compact(s);
+  const byCompact = lines.find((line) => compact(line) === sc);
+  if (byCompact) return byCompact;
+  const byPrefix = lines.find((line) => line.startsWith(s));
+  if (byPrefix) return byPrefix;
+  return null;
+}
+
 interface ScheduleRow {
   id?: number;
+  employeeId?: number;
   scheduleDate?: string | Date | null;
   scheduleTime?: string | null;
+  scheduleSlot?: string | null;
   isStarted?: boolean;
   isCompleted?: boolean;
 }
@@ -25,6 +127,7 @@ export default function EditBookingStatus() {
 
   const [status, setStatus] = useState<string>("PENDING");
   const [assignedTo, setAssignedTo] = useState<string>("");
+  const [selectedSubSlot, setSelectedSubSlot] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
 
@@ -69,8 +172,19 @@ export default function EditBookingStatus() {
     e.preventDefault();
     setErrorMsg("");
     setSuccessMsg("");
-    const payload: { status: string; assignedTo?: number | null } = { status };
+    const payload: {
+      status: string;
+      assignedTo?: number | null;
+      scheduleSlot?: string | null;
+    } = { status };
     payload.assignedTo = assignedTo === "" ? null : Number(assignedTo);
+    if (
+      assignedTo !== "" &&
+      !Number.isNaN(Number(assignedTo)) &&
+      selectedSubSlot != null
+    ) {
+      payload.scheduleSlot = selectedSubSlot.slice(0, 20);
+    }
     try {
       const res = await sendData(payload, undefined, "PATCH");
       if (res?.code === 200) {
@@ -78,6 +192,7 @@ export default function EditBookingStatus() {
         if (res?.data?.status) setStatus(res.data.status);
         if (res?.data?.assignedTo != null) setAssignedTo(String(res.data.assignedTo));
         else if (res?.data?.assignedTo === null) setAssignedTo("");
+        await fetchBooking();
       } else {
         setErrorMsg(res?.message || "Update failed.");
       }
@@ -116,6 +231,94 @@ export default function EditBookingStatus() {
       day: "numeric",
     });
   };
+
+  const scheduleRows = useMemo((): ScheduleRow[] => {
+    if (!bookingData) return [];
+    const withSchedules = bookingData as { schedules?: ScheduleRow[] };
+    if (
+      Array.isArray(withSchedules.schedules) &&
+      withSchedules.schedules.length > 0
+    ) {
+      return withSchedules.schedules;
+    }
+    if (
+      bookingData.scheduleDate != null ||
+      bookingData.scheduleTime != null
+    ) {
+      return [
+        {
+          employeeId:
+            bookingData.assignedTo != null
+              ? Number(bookingData.assignedTo)
+              : undefined,
+          scheduleDate: bookingData.scheduleDate ?? null,
+          scheduleTime: bookingData.scheduleTime ?? null,
+          isStarted: bookingData.isStarted ?? false,
+          isCompleted: bookingData.isCompleted ?? false,
+        },
+      ];
+    }
+    return [];
+  }, [bookingData]);
+
+  const selectedEmployeeScheduleDisplay = useMemo(() => {
+    if (assignedTo === "" || Number.isNaN(Number(assignedTo))) {
+      return { kind: "none" as const };
+    }
+    const empId = Number(assignedTo);
+    const rowEmpId = (r: ScheduleRow) =>
+      r.employeeId == null ? NaN : Number(r.employeeId);
+    let times = scheduleRows
+      .filter((r) => rowEmpId(r) === empId)
+      .map((r) => r.scheduleTime)
+      .filter((t) => t != null && String(t).trim() !== "")
+      .map(String);
+    if (times.length === 0 && scheduleRows.length === 1) {
+      const t = scheduleRows[0].scheduleTime;
+      if (t != null && String(t).trim() !== "") times = [String(t)];
+    }
+    if (
+      times.length === 0 &&
+      bookingData?.scheduleTime != null &&
+      String(bookingData.scheduleTime).trim() !== ""
+    ) {
+      times = [String(bookingData.scheduleTime)];
+    }
+    const fallbackText = times.length > 0 ? times.join(", ") : "—";
+    if (fallbackText === "—") {
+      return { kind: "plain" as const, text: "—" };
+    }
+    const step = parseMintsMinutesFromBooking(bookingData);
+    if (step != null) {
+      const lines: string[] = [];
+      for (const timeStr of times) {
+        const range = parseTimeRange(timeStr);
+        if (!range) continue;
+        lines.push(...buildSubSlots(range.start, range.end, step));
+      }
+      if (lines.length > 0) {
+        return { kind: "slots" as const, lines };
+      }
+    }
+    return { kind: "plain" as const, text: fallbackText };
+  }, [assignedTo, scheduleRows, bookingData]);
+
+  useEffect(() => {
+    if (selectedEmployeeScheduleDisplay.kind !== "slots") {
+      setSelectedSubSlot(null);
+      return;
+    }
+    const lines = selectedEmployeeScheduleDisplay.lines;
+    const dbSlot = scheduleRows
+      .map((r) => r.scheduleSlot)
+      .find((x) => x != null && String(x).trim() !== "");
+    const fromDb = matchSavedSlotToLine(dbSlot, lines);
+    setSelectedSubSlot((prev) => {
+      if (fromDb) return fromDb;
+      if (prev != null && lines.includes(prev)) return prev;
+      return lines[0] ?? null;
+    });
+  }, [selectedEmployeeScheduleDisplay, scheduleRows, assignedTo]);
 
   if (loadingBooking && !bookingData) {
     return (
@@ -174,6 +377,12 @@ export default function EditBookingStatus() {
             <dd className="font-medium text-gray-800 dark:text-white">{bookingData?.categoryName ?? "—"} / {bookingData?.serviceName ?? "—"}</dd>
           </div>
           <div>
+            <dt className="text-gray-500">Service mint</dt>
+            <dd className="font-medium text-gray-800 dark:text-white">
+              {displayServiceMints(bookingData)}
+            </dd>
+          </div>
+          <div>
             <dt className="text-gray-500">Total</dt>
             <dd className="font-medium text-gray-800 dark:text-white">${Number(bookingData?.totalPrice ?? 0).toFixed(2)}</dd>
           </div>
@@ -198,6 +407,43 @@ export default function EditBookingStatus() {
                   </option>
                 ))}
               </select>
+              {assignedTo !== "" && !Number.isNaN(Number(assignedTo)) && (
+                <div className="mt-2 rounded-lg border border-gray-200 bg-white px-3 py-2 dark:border-gray-700 dark:bg-gray-900/40">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Schedule time slots
+                  </p>
+                  {selectedEmployeeScheduleDisplay.kind === "slots" ? (
+                    <div
+                      className="mt-0.5 space-y-2 text-sm text-gray-800 dark:text-white"
+                      role="radiogroup"
+                      aria-label="Choose one schedule slot"
+                    >
+                      {selectedEmployeeScheduleDisplay.lines.map((line, i) => (
+                        <label
+                          key={`${line}-${i}`}
+                          className="flex cursor-pointer items-start gap-2 font-medium"
+                        >
+                          <input
+                            type="radio"
+                            name={`sub-slot-${id}`}
+                            value={line}
+                            checked={selectedSubSlot === line}
+                            onChange={() => setSelectedSubSlot(line)}
+                            className="mt-0.5 h-4 w-4 shrink-0 border-gray-300 text-indigo-600 focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-800"
+                          />
+                          <span className="leading-snug">{line}</span>
+                        </label>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm font-medium text-gray-800 dark:text-white">
+                      {selectedEmployeeScheduleDisplay.kind === "plain"
+                        ? selectedEmployeeScheduleDisplay.text
+                        : "—"}
+                    </p>
+                  )}
+                </div>
+              )}
             </dd>
           </div>
           <div>
@@ -247,49 +493,33 @@ export default function EditBookingStatus() {
               </TableRow>
             </TableHeader>
             <TableBody className="divide-y divide-gray-100 dark:divide-gray-800">
-              {(() => {
-                const schedules: ScheduleRow[] =
-                  Array.isArray((bookingData as { schedules?: ScheduleRow[] })?.schedules) &&
-                  (bookingData as { schedules?: ScheduleRow[] }).schedules!.length > 0
-                    ? (bookingData as { schedules: ScheduleRow[] }).schedules
-                    : bookingData?.scheduleDate != null || bookingData?.scheduleTime != null
-                      ? [
-                          {
-                            scheduleDate: bookingData?.scheduleDate ?? null,
-                            scheduleTime: bookingData?.scheduleTime ?? null,
-                            isStarted: bookingData?.isStarted ?? false,
-                            isCompleted: bookingData?.isCompleted ?? false,
-                          },
-                        ]
-                      : [];
-                return schedules.length > 0 ? (
-                  schedules.map((row: ScheduleRow, idx: number) => (
-                    <TableRow key={row.id ?? idx}>
-                      <TableCell className="py-3 text-gray-500 text-theme-sm dark:text-gray-400">
-                        {row.scheduleDate ? formatDateOnly(row.scheduleDate) : "—"}
-                      </TableCell>
-                      <TableCell className="py-3 text-gray-500 text-theme-sm dark:text-gray-400">
-                        {row.scheduleTime ?? "—"}
-                      </TableCell>
-                      <TableCell className="py-3 text-gray-500 text-theme-sm dark:text-gray-400">
-                        {!!row.isStarted ? "Yes" : "No"}
-                      </TableCell>
-                      <TableCell className="py-3 text-gray-500 text-theme-sm dark:text-gray-400">
-                        {!!row.isCompleted ? "Yes" : "No"}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell
-                      colSpan={4}
-                      className="py-6 text-center text-gray-500 text-theme-sm dark:text-gray-400"
-                    >
-                      No schedule entries.
+              {scheduleRows.length > 0 ? (
+                scheduleRows.map((row: ScheduleRow, idx: number) => (
+                  <TableRow key={row.id ?? idx}>
+                    <TableCell className="py-3 text-gray-500 text-theme-sm dark:text-gray-400">
+                      {row.scheduleDate ? formatDateOnly(row.scheduleDate) : "—"}
+                    </TableCell>
+                    <TableCell className="py-3 text-gray-500 text-theme-sm dark:text-gray-400">
+                      {row.scheduleTime ?? "—"}
+                    </TableCell>
+                    <TableCell className="py-3 text-gray-500 text-theme-sm dark:text-gray-400">
+                      {!!row.isStarted ? "Yes" : "No"}
+                    </TableCell>
+                    <TableCell className="py-3 text-gray-500 text-theme-sm dark:text-gray-400">
+                      {!!row.isCompleted ? "Yes" : "No"}
                     </TableCell>
                   </TableRow>
-                );
-              })()}
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={4}
+                    className="py-6 text-center text-gray-500 text-theme-sm dark:text-gray-400"
+                  >
+                    No schedule entries.
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </div>

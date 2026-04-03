@@ -8,6 +8,7 @@ export type ExtendedAdminService = {
   title: string;
   slug: string;
   description?: string | null;
+  mints?: string | null;
   imageUrl?: string | null;
   seoTitle?: string | null;
   seoDescription?: string | null;
@@ -29,6 +30,7 @@ export default class AdminServiceResource extends BaseResource<ExtendedAdminServ
       title: service.title,
       slug: service.slug,
       description: service.description,
+      mints: service.mints,
       imageUrl: service.imageUrl
         ? `${process.env.NEXT_PUBLIC_APP_URL || ""}${service.imageUrl}`
         : null,

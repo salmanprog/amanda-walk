@@ -141,6 +141,7 @@ async function main() {
       servicesCategoryId: 1,
       description:
         "Lorem Ipsum is simply dummy text of the printing and typesetting industry...",
+      mints: "15",
       imageUrl: "",
       seoTitle: "15 Min Dog Walk AM",
       seoDescription:
@@ -155,6 +156,7 @@ async function main() {
       servicesCategoryId: 1,
       description:
         "Lorem Ipsum is simply dummy text of the printing and typesetting industry...",
+      mints: "20",
       imageUrl: "",
       seoTitle: "20 Min Dog Walk AM",
       seoDescription:
@@ -169,6 +171,7 @@ async function main() {
       servicesCategoryId: 1,
       description:
         "Lorem Ipsum is simply dummy text of the printing and typesetting industry...",
+      mints: "30",
       imageUrl: "",
       seoTitle: "30 Min Dog Walk AM",
       seoDescription:
@@ -188,6 +191,7 @@ async function main() {
         userId: service.userId,
         servicesCategoryId: service.servicesCategoryId,
         description: service.description,
+        mints: service.mints,
         imageUrl: service.imageUrl,
         seoTitle: service.seoTitle,
         seoDescription: service.seoDescription,
@@ -196,7 +200,81 @@ async function main() {
       },
     });
   }
-  
+
+  const scheduleSlots = [
+    {
+      slug: "8-10-am",
+      startTime: "08",
+      startAmPM: "AM",
+      endTime: "10",
+      endAmPM: "AM",
+    },
+    {
+      slug: "10-12-am",
+      startTime: "10",
+      startAmPM: "AM",
+      endTime: "12",
+      endAmPM: "AM",
+    },
+    {
+      slug: "12-2-pm",
+      startTime: "12",
+      startAmPM: "PM",
+      endTime: "02",
+      endAmPM: "PM",
+    },
+    {
+      slug: "2-4-pm",
+      startTime: "02",
+      startAmPM: "PM",
+      endTime: "04",
+      endAmPM: "PM",
+    },
+    {
+      slug: "4-6-pm",
+      startTime: "04",
+      startAmPM: "PM",
+      endTime: "06",
+      endAmPM: "PM",
+    },
+    {
+      slug: "6-8-pm",
+      startTime: "06",
+      startAmPM: "PM",
+      endTime: "08",
+      endAmPM: "PM",
+    },
+    {
+      slug: "8-10-pm",
+      startTime: "08",
+      startAmPM: "PM",
+      endTime: "10",
+      endAmPM: "PM",
+    },
+    {
+      slug: "10-12-pm",
+      startTime: "10",
+      startAmPM: "PM",
+      endTime: "12",
+      endAmPM: "AM",
+    },
+  ];
+
+  for (const scheduleSlot of scheduleSlots) {
+    await prisma.scheduleSlots.upsert({
+      where: { slug: scheduleSlot.slug },
+      update: {},
+      create: {
+        slug: scheduleSlot.slug,
+        startTime: scheduleSlot.startTime,
+        startAmPM: scheduleSlot.startAmPM,
+        endTime: scheduleSlot.endTime,
+        endAmPM: scheduleSlot.endAmPM,
+        status: true,
+      },
+    });
+  }
+
   await prisma.petType.upsert({
     where: { slug: 'dog' },
     update: {},
@@ -358,6 +436,23 @@ async function main() {
     parentId: EmployeebookingsModule.id,
     sortOrder: 1,
   });
+
+  // MAIN SECTION - Services (Parent)
+  const schduleModule = await findOrCreateModule({
+    name: "Schedule Slots",
+    routeName: "#",
+    icon: "Clock",
+    sortOrder: sortOrder++,
+  });
+
+  // MAIN SECTION - Services Categories (Child)
+  const allScheduleSlotsModule = await findOrCreateModule({
+    name: "All Schedule Slots",
+    routeName: "/admin/schedule-slots/",
+    icon: null,
+    parentId: schduleModule.id,
+    sortOrder: 1,
+  });
   // Collect all modules for permission creation
   const superAdminModules = [
     dashboardModule,
@@ -370,6 +465,8 @@ async function main() {
     allEmployeesModule,
     bookingsModule,
     allBookingsModule,
+    schduleModule,
+    allScheduleSlotsModule,
   ];
   
   const adminModules = [
@@ -383,6 +480,8 @@ async function main() {
     allEmployeesModule,
     bookingsModule,
     allBookingsModule,
+    schduleModule,
+    allScheduleSlotsModule,
   ];
   
   const clientModules = [

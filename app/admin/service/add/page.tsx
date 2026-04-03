@@ -19,6 +19,7 @@ export default function AddService() {
   const [seoDescription, setSeoDescription] = useState("");
   const [image, setImage] = useState<File | null>(null);
   const [price, setPrice] = useState("");
+  const [mints, setMints] = useState("");
   const [status, setStatus] = useState("1");
   const [errorMsg, setErrorMsg] = useState("");
   const [serviceCategoryId, setServiceCategoryId] = useState("");
@@ -57,6 +58,7 @@ export default function AddService() {
       formData.append("seoDescription", seoDescription);
       formData.append("status", status);
       formData.append("price", price);
+      formData.append("mints", mints);
       if (image) formData.append("image", image);
 
       const res = await sendData(formData, undefined, "POST");
@@ -179,6 +181,22 @@ export default function AddService() {
                 dark:bg-gray-900 dark:text-white dark:border-gray-700"
               />
             </div>
+
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                Minutes
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. 30"
+                value={mints}
+                onChange={(e) => setMints(e.target.value)}
+                className="h-11 w-full rounded-lg border px-4 py-2.5 text-sm shadow-theme-xs
+                bg-transparent border-gray-300 focus:border-brand-300
+                dark:bg-gray-900 dark:text-white dark:border-gray-700"
+              />
+            </div>
+            
             {/* SEO Title */}
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
