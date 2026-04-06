@@ -453,6 +453,23 @@ async function main() {
     parentId: schduleModule.id,
     sortOrder: 1,
   });
+
+  // MAIN SECTION - Generate Signup Links (Parent)
+  const generateSignupLinksModule = await findOrCreateModule({
+    name: "Generate Signup Links",
+    routeName: "#",
+    icon: "Link",
+    sortOrder: sortOrder++,
+  });
+
+  // MAIN SECTION - Services Categories (Child)
+  const allGenerateSignupLinksModule = await findOrCreateModule({
+    name: "All Generate Signup Links",
+    routeName: "/admin/generate-signup-links/",
+    icon: null,
+    parentId: generateSignupLinksModule.id,
+    sortOrder: 1,
+  });
   // Collect all modules for permission creation
   const superAdminModules = [
     dashboardModule,
@@ -467,6 +484,8 @@ async function main() {
     allBookingsModule,
     schduleModule,
     allScheduleSlotsModule,
+    generateSignupLinksModule,
+    allGenerateSignupLinksModule,
   ];
   
   const adminModules = [
@@ -482,6 +501,8 @@ async function main() {
     allBookingsModule,
     schduleModule,
     allScheduleSlotsModule,
+    generateSignupLinksModule,
+    allGenerateSignupLinksModule,
   ];
   
   const clientModules = [

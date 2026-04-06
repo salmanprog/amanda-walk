@@ -1,5 +1,6 @@
 import { Prisma, UserType } from "@prisma/client";
 import { getHookUser } from "@/utils/hookUser";
+import { prisma } from "@/lib/prisma";
 
 export default class UserHook {
 
@@ -54,10 +55,36 @@ export default class UserHook {
   }
 
   static async beforeCreateHook(
-  data: Prisma.UserCreateInput & { userGroupId?: number }
-): Promise<Prisma.UserCreateInput & { userGroupId?: number }> { 
-   data.userGroupId = 2;
-    data.status = false;
+    data: Prisma.UserCreateInput & { userGroupId?: number },
+    request?: Record<string, unknown>
+  ): Promise<Prisma.UserCreateInput & { userGroupId?: number }> {
+    data.userGroupId = 2;
+
+    const q = request?.query as Record<string, unknown> | undefined;
+    const raw = q?.refSlug ?? q?.slug;
+    const refSlug =
+      typeof raw === "string"
+        ? raw.trim()
+        : Array.isArray(raw)
+          ? String(raw[0] ?? "").trim()
+          : "";
+
+    if (refSlug) {
+      const link = await (prisma as unknown as {
+        generate_signup_links: { findFirst: (args: object) => Promise<{ id: number } | null> };
+      }).generate_signup_links.findFirst({
+        where: {
+          slug: refSlug,
+          deletedAt: null,
+          status: true,
+        },
+        select: { id: true },
+      });
+      data.status = Boolean(link);
+    } else {
+      data.status = false;
+    }
+
     return data;
   }
 }

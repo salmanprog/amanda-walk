@@ -6,7 +6,7 @@ import Button from "@/components/ui/button/Button";
 import Input from "@/components/form/input/InputField";
 import { motion } from "framer-motion";
 import useApi, { ApiResponse } from "@/utils/useApi";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { KeyRound } from "lucide-react";
 
 interface SignupResponse {
@@ -15,6 +15,9 @@ interface SignupResponse {
 
 export default function SignUpForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const refSlug =
+    searchParams.get("refSlug") || searchParams.get("slug") || "";
 
   // 🔐 Redirect if already logged in
   useEffect(() => {
@@ -43,14 +46,17 @@ export default function SignUpForm() {
     password: "",
   });
 
-  // 🔴 ONLY API validation errors
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const { sendData, loading } = useApi({
+  const { sendData, loading, updateParams } = useApi({
     url: "/api/users",
     type: "manual",
     requiresAuth: false,
   });
+
+  useEffect(() => {
+    updateParams({ slug: refSlug });
+  }, [refSlug]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -104,7 +110,7 @@ export default function SignUpForm() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-
+        <input type="hidden" name="refSlug" value={refSlug} />
         {Object.values(errors).filter(Boolean).length > 0 && (
           <div className="bg-red-100 text-red-700 p-3 rounded-md text-sm space-y-1">
             {Object.values(errors)

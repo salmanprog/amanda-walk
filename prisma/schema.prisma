@@ -195,6 +195,18 @@ model Media {
   @@map("media")
 }
 
+model generate_signup_links {
+  id          Int       @id @default(autoincrement())
+  slug           String    @unique @db.VarChar(255)
+  url         String    @db.Text
+  status      Boolean   @default(true)
+  createdAt   DateTime  @default(now()) @db.Timestamp(6)
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime? @db.Timestamp(6)
+
+  @@map("generate_signup_links")
+}
+
 model CmModule {
   id        Int       @id @default(autoincrement())
   parentId  Int?      @map("parent_id")

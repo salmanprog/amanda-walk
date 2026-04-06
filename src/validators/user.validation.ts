@@ -198,6 +198,16 @@ export const updateScheduleSlot = yup.object({
   status: yup.string().optional(),
 });
 
+export const storeGenerateSignupLink = yup.object({
+  url: yup.string().required("URL is required"),
+  status: yup.string().optional(),
+});
+
+export const updateGenerateSignupLink = yup.object({
+  url: yup.string().optional(),
+  status: yup.string().optional(),
+});
+
 export const storePet = yup.object({
   name: yup.string().required("Pet name is required"),
   petTypeId: yup.string().required("Pet type is required"),
