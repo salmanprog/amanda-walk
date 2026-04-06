@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useCurrentUser } from "@/utils/currentUser";
 import useApi, { ApiResponse } from "@/utils/useApi";
@@ -12,6 +12,35 @@ import Image from "next/image";
 import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table";
 import Badge from "@/components/ui/badge/Badge";
 import { MessageCircle } from "lucide-react";
+
+function formatBookingScheduleDate(v: string | Date | null | undefined): string {
+  if (v == null || v === "") return "—";
+  const d = new Date(v);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function displayScheduleSlotOrTime(
+  slot: string | null | undefined,
+  time: string | null | undefined
+): string {
+  if (slot != null && String(slot).trim() !== "") return String(slot).trim();
+  if (time != null && String(time).trim() !== "") return String(time).trim();
+  return "—";
+}
+
+function firstNonEmptyStr(
+  a: string | null | undefined,
+  b: string | null | undefined
+): string {
+  const t = (v: string | null | undefined) =>
+    v != null && String(v).trim() !== "" ? String(v).trim() : "";
+  return t(a) || t(b);
+}
 
 interface AccountUser {
   id: number;
@@ -111,11 +140,28 @@ export default function AccountPage() {
 
   type BookingItem = {
     id: number;
+    userId?: number;
+    assignedTo?: number | null;
+    assignedEmployeeName?: string | null;
+    assignedEmployeeEmail?: string | null;
+    assignedEmployeePhone?: string | null;
+    petId?: number | null;
+    petName?: string | null;
+    petBreed?: string | null;
+    petGender?: string | null;
+    petDob?: string | null;
+    petWeight?: string | null;
+    petColor?: string | null;
+    petNotes?: string | null;
+    petTypeName?: string | null;
+    serviceCategoryId?: number;
+    serviceId?: number;
     userName?: string;
-    userEmail?: string;
-    userPhone?: string;
+    userEmail?: string | null;
+    userPhone?: string | null;
     categoryName?: string;
     serviceName?: string;
+    serviceMints?: string | null;
     quantity?: number;
     tax?: number;
     discount?: number;
@@ -126,19 +172,86 @@ export default function AccountPage() {
     updatedAt?: string | null;
     scheduleDate?: string | null;
     scheduleTime?: string | null;
+    scheduleSlot?: string | null;
     isStarted?: boolean;
     isCompleted?: boolean;
     schedules?: Array<{
       id?: number;
+      employeeId?: number;
+      employeeName?: string | null;
+      employeeEmail?: string | null;
+      employeePhone?: string | null;
       scheduleDate?: string | Date | null;
       scheduleTime?: string | null;
+      scheduleSlot?: string | null;
       isStarted?: boolean;
       isCompleted?: boolean;
+      petId?: number | null;
+      petName?: string | null;
+      petBreed?: string | null;
+      petGender?: string | null;
+      petDob?: string | null;
+      petWeight?: string | null;
+      petColor?: string | null;
+      petNotes?: string | null;
+      petTypeName?: string | null;
     }>;
   };
 
   const [bookings, setBookings] = useState<BookingItem[]>([]);
   const [viewBookingDetails, setViewBookingDetails] = useState<BookingItem | null>(null);
+
+  const bookingDetailsContactEmail = useMemo(() => {
+    if (!viewBookingDetails) return "";
+    const raw = viewBookingDetails.userEmail;
+    if (raw != null && String(raw).trim() !== "") return String(raw).trim();
+    if (
+      user &&
+      viewBookingDetails.userId != null &&
+      Number(viewBookingDetails.userId) === Number(user.id) &&
+      user.email != null &&
+      String(user.email).trim() !== ""
+    ) {
+      return String(user.email).trim();
+    }
+    return "";
+  }, [viewBookingDetails, user]);
+
+  const bookingDetailsContactPhone = useMemo(() => {
+    if (!viewBookingDetails) return "";
+    const raw = viewBookingDetails.userPhone;
+    if (raw != null && String(raw).trim() !== "") return String(raw).trim();
+    if (
+      user &&
+      viewBookingDetails.userId != null &&
+      Number(viewBookingDetails.userId) === Number(user.id)
+    ) {
+      const m =
+        user.mobileNumber ??
+        (user as AccountUser & { phone?: string | null }).phone;
+      if (m != null && String(m).trim() !== "") return String(m).trim();
+    }
+    return "";
+  }, [viewBookingDetails, user]);
+
+  const bookingPetDisplay = useMemo(() => {
+    if (!viewBookingDetails) {
+      return { petName: "", petTypeName: "", petBreed: "", petGender: "" };
+    }
+    const row = viewBookingDetails.schedules?.[0];
+    return {
+      petName: firstNonEmptyStr(viewBookingDetails.petName, row?.petName),
+      petTypeName: firstNonEmptyStr(
+        viewBookingDetails.petTypeName,
+        row?.petTypeName
+      ),
+      petBreed: firstNonEmptyStr(viewBookingDetails.petBreed, row?.petBreed),
+      petGender: firstNonEmptyStr(
+        viewBookingDetails.petGender,
+        row?.petGender
+      ),
+    };
+  }, [viewBookingDetails]);
 
   useEffect(() => {
     if (activeTab === "booking") fetchBookings();
@@ -677,14 +790,14 @@ export default function AccountPage() {
                         </div>
                         <div>
                           <dt className="text-gray-500 dark:text-gray-400">Email</dt>
-                          <dd className="font-medium text-gray-900 dark:text-white">
-                            {viewBookingDetails.userEmail ?? "—"}
+                          <dd className="font-medium text-gray-900 dark:text-white break-all">
+                            {bookingDetailsContactEmail || "—"}
                           </dd>
                         </div>
                         <div>
                           <dt className="text-gray-500 dark:text-gray-400">Phone</dt>
                           <dd className="font-medium text-gray-900 dark:text-white">
-                            {viewBookingDetails.userPhone ?? "—"}
+                            {bookingDetailsContactPhone || "—"}
                           </dd>
                         </div>
                         <div>
@@ -700,33 +813,97 @@ export default function AccountPage() {
                           </dd>
                         </div>
                         <div>
-                          <dt className="text-gray-500 dark:text-gray-400">Quantity</dt>
+                          <dt className="text-gray-500 dark:text-gray-400">Service duration</dt>
                           <dd className="font-medium text-gray-900 dark:text-white">
-                            {viewBookingDetails.quantity ?? "—"}
+                            {viewBookingDetails.serviceMints != null &&
+                            String(viewBookingDetails.serviceMints).trim() !== ""
+                              ? String(viewBookingDetails.serviceMints).trim()
+                              : "—"}
                           </dd>
                         </div>
                         <div>
-                          <dt className="text-gray-500 dark:text-gray-400">Tax</dt>
+                          <dt className="text-gray-500 dark:text-gray-400">Schedule date</dt>
                           <dd className="font-medium text-gray-900 dark:text-white">
-                            {viewBookingDetails.tax != null ? `$${Number(viewBookingDetails.tax).toFixed(2)}` : "—"}
+                            {formatBookingScheduleDate(
+                              viewBookingDetails.scheduleDate ?? undefined
+                            )}
                           </dd>
                         </div>
                         <div>
-                          <dt className="text-gray-500 dark:text-gray-400">Discount</dt>
+                          <dt className="text-gray-500 dark:text-gray-400">Schedule time</dt>
                           <dd className="font-medium text-gray-900 dark:text-white">
-                            {viewBookingDetails.discount != null ? `$${Number(viewBookingDetails.discount).toFixed(2)}` : "—"}
+                            {displayScheduleSlotOrTime(
+                              viewBookingDetails.scheduleSlot,
+                              viewBookingDetails.scheduleTime
+                            )}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-gray-500 dark:text-gray-400">Assigned employee name</dt>
+                          <dd className="font-medium text-gray-900 dark:text-white">
+                            {viewBookingDetails.assignedEmployeeName != null &&
+                            String(viewBookingDetails.assignedEmployeeName).trim() !== ""
+                              ? String(viewBookingDetails.assignedEmployeeName).trim()
+                              : "—"}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-gray-500 dark:text-gray-400">Assigned employee email</dt>
+                          <dd className="font-medium text-gray-900 dark:text-white break-all">
+                            {viewBookingDetails.assignedEmployeeEmail != null &&
+                            String(viewBookingDetails.assignedEmployeeEmail).trim() !== ""
+                              ? String(viewBookingDetails.assignedEmployeeEmail).trim()
+                              : "—"}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-gray-500 dark:text-gray-400">Pet name</dt>
+                          <dd className="font-medium text-gray-900 dark:text-white">
+                            {bookingPetDisplay.petName || "—"}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-gray-500 dark:text-gray-400">Pet type</dt>
+                          <dd className="font-medium text-gray-900 dark:text-white">
+                            {bookingPetDisplay.petTypeName || "—"}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-gray-500 dark:text-gray-400">Breed</dt>
+                          <dd className="font-medium text-gray-900 dark:text-white">
+                            {bookingPetDisplay.petBreed || "—"}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-gray-500 dark:text-gray-400">Gender</dt>
+                          <dd className="font-medium text-gray-900 dark:text-white">
+                            {bookingPetDisplay.petGender || "—"}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-gray-500 dark:text-gray-400">Walk started</dt>
+                          <dd className="font-medium text-gray-900 dark:text-white">
+                            {viewBookingDetails.isStarted != null
+                              ? viewBookingDetails.isStarted
+                                ? "Yes"
+                                : "No"
+                              : "—"}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-gray-500 dark:text-gray-400">Walk completed</dt>
+                          <dd className="font-medium text-gray-900 dark:text-white">
+                            {viewBookingDetails.isCompleted != null
+                              ? viewBookingDetails.isCompleted
+                                ? "Yes"
+                                : "No"
+                              : "—"}
                           </dd>
                         </div>
                         <div>
                           <dt className="text-gray-500 dark:text-gray-400">Total</dt>
                           <dd className="font-medium text-gray-900 dark:text-white">
                             ${Number(viewBookingDetails.totalPrice).toFixed(2)}
-                          </dd>
-                        </div>
-                        <div>
-                          <dt className="text-gray-500 dark:text-gray-400">Paid</dt>
-                          <dd className="font-medium text-gray-900 dark:text-white">
-                            {viewBookingDetails.isPaid != null ? (viewBookingDetails.isPaid ? "Yes" : "No") : "—"}
                           </dd>
                         </div>
                         <div>
@@ -746,91 +923,7 @@ export default function AccountPage() {
                             </Badge>
                           </dd>
                         </div>
-                        <div>
-                          <dt className="text-gray-500 dark:text-gray-400">Created</dt>
-                          <dd className="font-medium text-gray-900 dark:text-white">
-                            {viewBookingDetails.createdAt
-                              ? new Date(viewBookingDetails.createdAt).toLocaleString("en-US")
-                              : "—"}
-                          </dd>
-                        </div>
-                        <div>
-                          <dt className="text-gray-500 dark:text-gray-400">Updated</dt>
-                          <dd className="font-medium text-gray-900 dark:text-white">
-                            {viewBookingDetails.updatedAt
-                              ? new Date(viewBookingDetails.updatedAt).toLocaleString("en-US")
-                              : "—"}
-                          </dd>
-                        </div>
                       </dl>
-
-                      {/* Booking schedules */}
-                      <div className="mb-6">
-                        <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Booking schedules
-                        </h4>
-                        {viewBookingDetails.schedules && viewBookingDetails.schedules.length > 0 ? (
-                          <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-600">
-                            <Table>
-                              <TableHeader className="border-gray-100 dark:border-gray-700 border-y">
-                                <TableRow>
-                                  <TableCell
-                                    isHeader
-                                    className="py-2 font-medium text-gray-500 text-theme-xs dark:text-gray-400"
-                                  >
-                                    Schedule date
-                                  </TableCell>
-                                  <TableCell
-                                    isHeader
-                                    className="py-2 font-medium text-gray-500 text-theme-xs dark:text-gray-400"
-                                  >
-                                    Schedule time
-                                  </TableCell>
-                                  <TableCell
-                                    isHeader
-                                    className="py-2 font-medium text-gray-500 text-theme-xs dark:text-gray-400"
-                                  >
-                                    Started
-                                  </TableCell>
-                                  <TableCell
-                                    isHeader
-                                    className="py-2 font-medium text-gray-500 text-theme-xs dark:text-gray-400"
-                                  >
-                                    Completed
-                                  </TableCell>
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody className="divide-y divide-gray-100 dark:divide-gray-700">
-                                {viewBookingDetails.schedules.map((s, i) => (
-                                  <TableRow key={s.id ?? i}>
-                                    <TableCell className="py-2 text-theme-sm dark:text-gray-400">
-                                      {s.scheduleDate
-                                        ? new Date(s.scheduleDate as string | Date).toLocaleDateString("en-US", {
-                                            year: "numeric",
-                                            month: "short",
-                                            day: "numeric",
-                                          })
-                                        : "—"}
-                                    </TableCell>
-                                    <TableCell className="py-2 text-theme-sm dark:text-gray-400">
-                                      {s.scheduleTime ?? "—"}
-                                    </TableCell>
-                                    <TableCell className="py-2 text-theme-sm dark:text-gray-400">
-                                      {!!s.isStarted ? "Yes" : "No"}
-                                    </TableCell>
-                                    <TableCell className="py-2 text-theme-sm dark:text-gray-400">
-                                      {!!s.isCompleted ? "Yes" : "No"}
-                                    </TableCell>
-                                  </TableRow>
-                                ))}
-                              </TableBody>
-                            </Table>
-                          </div>
-                        ) : (
-                          <p className="text-sm text-gray-500 dark:text-gray-400">No schedule entries.</p>
-                        )}
-                      </div>
-
                       <div className="mt-6">
                         <Button
                           type="button"

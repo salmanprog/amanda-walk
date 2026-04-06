@@ -1,4 +1,4 @@
-import { BookingStatus } from "@prisma/client";
+import { BookingStatus, UserType } from "@prisma/client";
 import { getHookUser } from "@/utils/hookUser";
 
 export default class AdminBookingHook {
@@ -17,24 +17,48 @@ export default class AdminBookingHook {
         status: { not: BookingStatus.CANCELLED },
       };
     }
+    if (user && String(user.userType) === UserType.USER) {
+      query.where = { ...query.where, userId: Number(user.id) };
+    }
     query.orderBy = {
       createdAt: "desc",
     };
     query.include = {
-      user: { select: { name: true, lname: true } },
+      user: {
+        select: { name: true, lname: true, email: true, mobileNumber: true },
+      },
+      assignedUser: {
+        select: { id: true, name: true, lname: true, email: true, mobileNumber: true },
+      },
       category: { select: { title: true } },
       service: { select: { title: true, mints: true } },
       schedules: {
         where: { deletedAt: null },
-        select: {
-          employeeId: true,
-          scheduleDate: true,
-          scheduleTime: true,
-          scheduleSlot: true,
-          isStarted: true,
-          isCompleted: true,
-        },
         orderBy: { scheduleDate: "asc" },
+        include: {
+          employee: {
+            select: {
+              id: true,
+              name: true,
+              lname: true,
+              email: true,
+              mobileNumber: true,
+            },
+          },
+          pet: {
+            select: {
+              id: true,
+              name: true,
+              breed: true,
+              gender: true,
+              dob: true,
+              weight: true,
+              color: true,
+              notes: true,
+              petType: { select: { name: true } },
+            },
+          },
+        },
       },
     };
     return query;
@@ -48,20 +72,38 @@ export default class AdminBookingHook {
     query.where = { ...query.where, deletedAt: null };
     query.include = {
       user: { select: { name: true, lname: true, email: true, mobileNumber: true } },
+      assignedUser: {
+        select: { id: true, name: true, lname: true, email: true, mobileNumber: true },
+      },
       category: { select: { title: true } },
       service: { select: { title: true, mints: true } },
       schedules: {
         where: { deletedAt: null },
-        select: {
-          id: true,
-          employeeId: true,
-          scheduleDate: true,
-          scheduleTime: true,
-          scheduleSlot: true,
-          isStarted: true,
-          isCompleted: true,
-        },
         orderBy: { scheduleDate: "asc" },
+        include: {
+          employee: {
+            select: {
+              id: true,
+              name: true,
+              lname: true,
+              email: true,
+              mobileNumber: true,
+            },
+          },
+          pet: {
+            select: {
+              id: true,
+              name: true,
+              breed: true,
+              gender: true,
+              dob: true,
+              weight: true,
+              color: true,
+              notes: true,
+              petType: { select: { name: true } },
+            },
+          },
+        },
       },
     };
     return query;

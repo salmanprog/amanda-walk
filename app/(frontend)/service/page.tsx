@@ -274,11 +274,11 @@ export default function ServicePage() {
 
       if (res.code === 200) {
         toast.success("Service selected successfully!");
-        router.push("/appointment");
+        router.push("/account");
       } else {
         toast.error(res.message || "Booking failed");
       }
-    } catch {
+    } catch { 
       toast.error("Something went wrong");
     } finally {
       setLoading(false);

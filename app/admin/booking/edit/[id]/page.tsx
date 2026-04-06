@@ -377,7 +377,7 @@ export default function EditBookingStatus() {
             <dd className="font-medium text-gray-800 dark:text-white">{bookingData?.categoryName ?? "—"} / {bookingData?.serviceName ?? "—"}</dd>
           </div>
           <div>
-            <dt className="text-gray-500">Service mint</dt>
+            <dt className="text-gray-500">Service Duration</dt>
             <dd className="font-medium text-gray-800 dark:text-white">
               {displayServiceMints(bookingData)}
             </dd>
@@ -389,7 +389,10 @@ export default function EditBookingStatus() {
           <div>
             <dt className="text-gray-500">Schedule</dt>
             <dd className="font-medium text-gray-800 dark:text-white">
-              {bookingData?.scheduleDate ? formatDate(bookingData.scheduleDate) : "—"} {bookingData?.scheduleTime ?? ""}
+              {bookingData?.scheduleSlot != null &&
+                    String(bookingData.scheduleSlot).trim() !== ""
+                      ? String(bookingData.scheduleSlot).trim()
+                      : (bookingData.scheduleTime ?? "—")}
             </dd>
           </div>
           <div className="sm:col-span-2">
@@ -500,7 +503,10 @@ export default function EditBookingStatus() {
                       {row.scheduleDate ? formatDateOnly(row.scheduleDate) : "—"}
                     </TableCell>
                     <TableCell className="py-3 text-gray-500 text-theme-sm dark:text-gray-400">
-                      {row.scheduleTime ?? "—"}
+                      {row.scheduleSlot != null &&
+                    String(row.scheduleSlot).trim() !== ""
+                      ? String(row.scheduleSlot).trim()
+                      : (row.scheduleTime ?? "—")}
                     </TableCell>
                     <TableCell className="py-3 text-gray-500 text-theme-sm dark:text-gray-400">
                       {!!row.isStarted ? "Yes" : "No"}

@@ -116,8 +116,6 @@ export default function AddPets() {
     const petTypeOptions = [
         { value: "1", label: "Dog" },
         { value: "2", label: "Cat" },
-        { value: "3", label: "Grey" },
-        { value: "4", label: "Other" },
     ];
 
     const [error, setError] = useState<string | null>(null);

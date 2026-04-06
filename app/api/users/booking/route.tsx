@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 import { promises as fs } from "fs";
 import path from "path";
 import { verifyToken } from "@/utils/jwt";
+import { prisma } from "@/lib/prisma";
 
 interface DecodedToken {
   id: string;
@@ -86,7 +87,29 @@ export async function GET(req: Request) {
     );
   }
 
-  const controller = new AdminBookingController(req, { id: Number(user.id) });
+  const uid = Number(user.id);
+  const dbUser = await prisma.user.findUnique({
+    where: { id: uid },
+    select: { id: true, userGroupId: true, userType: true },
+  });
+  if (!dbUser) {
+    return NextResponse.json(
+      { code: 401, message: "User not found" },
+      { status: 401 }
+    );
+  }
+
+  const headers = new Headers(req.headers);
+  headers.set(
+    "x-current-user",
+    JSON.stringify({
+      id: String(dbUser.id),
+      userGroupId: dbUser.userGroupId ?? null,
+      userType: dbUser.userType,
+    })
+  );
+  const reqWithUser = new Request(req.url, { method: req.method, headers });
+  const controller = new AdminBookingController(reqWithUser);
   return controller.index();
 }
 
