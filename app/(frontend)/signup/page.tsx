@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import Button from "@/components/ui/button/Button";
 import Input from "@/components/form/input/InputField";
@@ -13,7 +13,7 @@ interface SignupResponse {
   [key: string]: string;
 }
 
-export default function SignUpForm() {
+function SignUpFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const refSlug =
@@ -264,5 +264,19 @@ export default function SignUpForm() {
         </Button>
       </form>
     </motion.div>
+  );
+}
+
+export default function SignUpPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="glass-effect rounded-2xl shadow-2xl p-6 mb-6 flex min-h-[200px] items-center justify-center">
+          <p className="text-sm text-gray-500 dark:text-gray-400">Loading…</p>
+        </div>
+      }
+    >
+      <SignUpFormContent />
+    </Suspense>
   );
 }
