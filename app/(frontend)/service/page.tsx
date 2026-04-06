@@ -358,18 +358,26 @@ export default function ServicePage() {
               ) : (
                 servicesCategories.map((category) => (
                   <div key={category.id} className="flex justify-center">
-                    <div
-                      onClick={() => handleCategoryClick(category.id)}
-                      className="w-48 h-40 bg-white border-2 border-indigo-200 rounded-2xl shadow-sm flex flex-col items-center justify-center relative"
+                    <label
+                      htmlFor={`service-category-${category.id}`}
+                      className={`w-48 h-40 bg-white border-2 rounded-2xl shadow-sm flex flex-col items-center justify-center relative cursor-pointer transition-all ${
+                        selectedCategory === category.id
+                          ? "border-indigo-500 bg-indigo-50"
+                          : "border-indigo-200 hover:border-indigo-300"
+                      }`}
                     >
                       <div className="w-16 h-16 rounded-full bg-[#A855F7] flex items-center justify-center mb-3 shadow-inner">
                         <Sparkles className="text-white" size={28} />
                       </div>
                       <span className="font-bold text-[#1E293B]">{category.title}</span>
-                      <div className="mt-2 bg-gradient rounded-full p-0.5">
-                        <Check size={14} className="text-white" strokeWidth={3} />
-                      </div>
-                    </div>
+                      <input
+                        id={`service-category-${category.id}`}
+                        type="checkbox"
+                        checked={selectedCategory === category.id}
+                        onChange={() => handleCategoryClick(category.id)}
+                        className="mt-2 h-5 w-5 shrink-0 rounded border-gray-300 accent-indigo-600 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-0"
+                      />
+                    </label>
                   </div>
                 ))
               )}

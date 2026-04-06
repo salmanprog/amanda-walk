@@ -449,7 +449,7 @@ export default function AccountPage() {
               >
                 Change Password
               </button>
-              <button
+              {/* <button
                 onClick={() => setActiveTab("booking")}
                 className={`px-6 py-3 font-semibold transition-colors ${
                   activeTab === "booking"
@@ -458,7 +458,7 @@ export default function AccountPage() {
                 }`}
               >
                 Booking
-              </button>
+              </button> */}
             </div>
 
             {/* Success/Error Messages */}
