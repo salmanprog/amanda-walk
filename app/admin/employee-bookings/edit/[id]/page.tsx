@@ -13,6 +13,7 @@ const BOOKING_STATUSES = ["PENDING", "CONFIRMED", "COMPLETED", "CANCELLED"] as c
 interface ScheduleRow {
   id?: number;
   scheduleDate?: string | Date | null;
+  scheduleSlot?: string | null;
   scheduleTime?: string | null;
   isStarted?: boolean;
   isCompleted?: boolean;
@@ -332,6 +333,7 @@ export default function EditEmployeeBookingPage() {
                       ? [
                           {
                             scheduleDate: bookingData?.scheduleDate ?? null,
+                            scheduleSlot: bookingData?.scheduleSlot ?? null,
                             scheduleTime: bookingData?.scheduleTime ?? null,
                             isStarted: bookingData?.isStarted ?? false,
                             isCompleted: bookingData?.isCompleted ?? false,
@@ -345,7 +347,10 @@ export default function EditEmployeeBookingPage() {
                       {row.scheduleDate ? formatDateOnly(row.scheduleDate) : "—"}
                       </TableCell>
                       <TableCell className="py-3 text-gray-500 text-theme-sm dark:text-gray-400">
-                        {row.scheduleTime ?? "—"}
+                      {row.scheduleSlot != null &&
+                    String(row.scheduleSlot).trim() !== ""
+                      ? String(row.scheduleSlot).trim()
+                      : (row.scheduleTime ?? "—")}
                       </TableCell>
                       <TableCell className="py-3 text-gray-500 text-theme-sm dark:text-gray-400">
                         {row.isStarted ? "Yes" : "No"}
