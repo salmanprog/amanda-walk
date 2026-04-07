@@ -202,7 +202,7 @@ function ChatPageContent() {
                     <div
                       className={`rounded-2xl px-4 py-2.5 shadow-sm max-w-full ${
                         isMe
-                          ? "bg-primary text-white rounded-br-md"
+                          ? "bg-primary bg-[#5b7cba] text-white rounded-br-md"
                           : "bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-gray-100 rounded-bl-md"
                       }`}
                     >
