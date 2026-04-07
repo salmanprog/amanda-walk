@@ -24,21 +24,45 @@ export async function GET(req: Request) {
     );
   }
 
-  const [totalClients, totalEmployees, totalBookings, totalServices] =
-    await Promise.all([
-      prisma.user.count({
-        where: { userGroupId: 3, deletedAt: null },
-      }),
-      prisma.user.count({
-        where: { userGroupId: 2, deletedAt: null },
-      }),
-      prisma.booking.count({
-        where: { deletedAt: null },
-      }),
-      prisma.employeeServices.count({
-        where: { deletedAt: null },
-      }),
-    ]);
+  const [
+    totalClients,
+    totalEmployees,
+    totalBookings,
+    totalServices,
+    employeeTotalBooking,
+    employeeTotalCompleteBooking,
+    employeeTotalPendingBooking,
+  ] = await Promise.all([
+    prisma.user.count({
+      where: { userGroupId: 3, deletedAt: null },
+    }),
+    prisma.user.count({
+      where: { userGroupId: 2, deletedAt: null },
+    }),
+    prisma.booking.count({
+      where: { deletedAt: null },
+    }),
+    prisma.employeeServices.count({
+      where: { deletedAt: null },
+    }),
+    prisma.bookingSchedule.count({
+      where: { employeeId: userId, deletedAt: null },
+    }),
+    prisma.bookingSchedule.count({
+      where: {
+        employeeId: userId,
+        deletedAt: null,
+        isCompleted: true,
+      },
+    }),
+    prisma.bookingSchedule.count({
+      where: {
+        employeeId: userId,
+        deletedAt: null,
+        isCompleted: false,
+      },
+    }),
+  ]);
 
   return NextResponse.json({
     code: 200,
@@ -48,6 +72,9 @@ export async function GET(req: Request) {
       totalEmployees,
       totalBookings,
       totalServices,
+      employeeTotalBooking,
+      employeeTotalCompleteBooking,
+      employeeTotalPendingBooking,
     },
   });
 }

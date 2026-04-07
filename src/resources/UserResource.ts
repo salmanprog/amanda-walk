@@ -14,6 +14,7 @@ export default class UserResource extends BaseResource<ExtendedUser> {
       slug: user.slug,
       name: user.name,
       email: user.email,
+      userGroupId: user.userGroupId,
       mobileNumber: user.mobileNumber,
       emergencyname: user.emergencyname,
       emergencyNumber: user.emergencyNumber,

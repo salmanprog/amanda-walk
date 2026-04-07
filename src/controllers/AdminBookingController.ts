@@ -142,6 +142,21 @@ export default class AdminBookingController extends RestController<
   }
 
   protected async afterUpdate(record: ExtendedBooking): Promise<ExtendedBooking> {
+    // Keep booking_schedules.employeeId aligned with booking.assignedTo (admin employee select).
+    if (record.id != null && record.assignedTo != null) {
+      const syncEmpId = Number(record.assignedTo);
+      if (
+        Number.isFinite(syncEmpId) &&
+        !Number.isNaN(syncEmpId) &&
+        syncEmpId > 0
+      ) {
+        await prisma.bookingSchedule.updateMany({
+          where: { bookingId: record.id, deletedAt: null },
+          data: { employeeId: syncEmpId },
+        });
+      }
+    }
+
     const slot = (this as { _scheduleSlotToPersist?: unknown })
       ._scheduleSlotToPersist;
     if (slot !== undefined && record.id != null) {

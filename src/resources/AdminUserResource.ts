@@ -15,6 +15,7 @@ export default class AdminUserResource extends BaseResource<ExtendedUser> {
       name: user.name,
       email: user.email,
       mobileNumber: user.mobileNumber,
+      userGroupId: user.userGroupId,
       emergencyname: user.emergencyname,
       emergencyNumber: user.emergencyNumber,
       streetAddress: user.streetAddress,

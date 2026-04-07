@@ -149,6 +149,7 @@ export default class AdminResource extends BaseResource<ExtendedUser> {
       slug: user.slug,
       name: user.name,
       email: user.email,
+      userGroupId: user.userGroupId,
       mobileNumber: user.mobileNumber,
       imageUrl: user.imageUrl
         ? `${process.env.NEXT_PUBLIC_APP_URL || ""}${user.imageUrl}`
