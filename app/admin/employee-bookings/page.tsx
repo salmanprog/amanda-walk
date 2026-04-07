@@ -26,6 +26,7 @@ interface Booking {
   deletedAt: string | null;
   scheduleDate?: string | null;
   scheduleTime?: string | null;
+  scheduleSlot?: string | null;
   isStarted?: boolean;
   isCompleted?: boolean;
 }
@@ -186,7 +187,10 @@ export default function EmployeeBookingList() {
                     {formatScheduleDate(booking.scheduleDate)}
                   </TableCell>
                   <TableCell className="py-3 text-gray-500 text-theme-sm dark:text-gray-400">
-                    {booking.scheduleTime ?? "—"}
+                  {booking.scheduleSlot != null &&
+                    String(booking.scheduleSlot).trim() !== ""
+                      ? String(booking.scheduleSlot).trim()
+                      : (booking.scheduleTime ?? "—")}
                   </TableCell>
                   <TableCell className="py-3 text-gray-500 text-theme-sm dark:text-gray-400">
                     {booking.isStarted ? "Yes" : "No"}
