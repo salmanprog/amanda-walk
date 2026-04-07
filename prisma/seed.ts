@@ -397,7 +397,7 @@ async function main() {
 
    // MAIN SECTION - Employees Services (Parent)
    const allEmployeeServicesModule = await findOrCreateModule({
-    name: "All Employee Services",
+    name: "Services",
     routeName: "/admin/employee-services/",
     icon: "Boxes",
     sortOrder: 1,
@@ -422,7 +422,7 @@ async function main() {
 
   // MAIN SECTION - Bookings (Parent)
   const EmployeebookingsModule = await findOrCreateModule({
-    name: "Employee Bookings",
+    name: "Bookings",
     routeName: "#",
     icon: "Calendar",
     sortOrder: sortOrder++,
@@ -430,7 +430,7 @@ async function main() {
 
   // MAIN SECTION - Bookings (Child)
   const allEmployeeBookingsModule = await findOrCreateModule({
-    name: "All Employee Bookings",
+    name: "All Bookings",
     routeName: "/admin/employee-bookings/",
     icon: null,
     parentId: EmployeebookingsModule.id,

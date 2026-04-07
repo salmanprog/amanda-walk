@@ -210,7 +210,7 @@ export default function EditEmployeeBookingPage() {
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
-            Edit Employee Booking
+            Edit Booking
           </h3>
           <p className="mt-1 text-sm text-gray-500">Booking #{bookingData?.id}</p>
         </div>
@@ -263,8 +263,10 @@ export default function EditEmployeeBookingPage() {
           <div>
             <dt className="text-gray-500">Schedule</dt>
             <dd className="font-medium text-gray-800 dark:text-white">
-              {bookingData?.scheduleDate ? formatDate(bookingData.scheduleDate) : "—"}{" "}
-              {bookingData?.scheduleTime ?? ""}
+            {bookingData?.scheduleSlot != null &&
+                    String(bookingData.scheduleSlot).trim() !== ""
+                      ? String(bookingData.scheduleSlot).trim()
+                      : (bookingData.scheduleTime ?? "—")}
             </dd>
           </div>
           <div>
