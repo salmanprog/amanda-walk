@@ -7,8 +7,110 @@ import Button from "@/components/ui/button/Button";
 import useApi from "@/utils/useApi";
 import Badge from "@/components/ui/badge/Badge";
 import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table";
+import { displayPetColor } from "@/lib/petColorLabels";
 
 const BOOKING_STATUSES = ["PENDING", "CONFIRMED", "COMPLETED", "CANCELLED"] as const;
+
+function isUnsetDisplay(s: string): boolean {
+  const t = s.trim();
+  return t === "" || t === "—" || t === "-" || t === "–";
+}
+
+/** Registration / profile: first matching key wins (`null`/empty/placeholder → try next → em dash). */
+function registrationField(booking: unknown, ...keys: string[]): string {
+  if (booking == null || typeof booking !== "object") return "—";
+  const b = booking as Record<string, unknown>;
+  for (const key of keys) {
+    const raw = b[key];
+    if (raw == null) continue;
+    const s = String(raw).trim();
+    if (!isUnsetDisplay(s)) return s;
+  }
+  return "—";
+}
+
+function registrationDisplayName(booking: unknown): string {
+  const n = registrationField(booking, "userName", "name");
+  if (!isUnsetDisplay(n)) return n;
+  if (booking != null && typeof booking === "object" && "userId" in booking) {
+    const uid = (booking as { userId?: unknown }).userId;
+    if (uid != null && String(uid).trim() !== "") return `User #${String(uid)}`;
+  }
+  return "—";
+}
+
+/** Single-line address: API `registrationAddressLine` or stitched parts (street, city, state, postal, country). */
+function registrationCombinedAddress(booking: unknown): string {
+  const line = registrationField(booking, "registrationAddressLine", "fullAddress");
+  if (!isUnsetDisplay(line)) return line;
+  if (booking == null || typeof booking !== "object") return "—";
+  const b = booking as Record<string, unknown>;
+  const parts = ["streetAddress", "city", "state", "postalCode", "country"].map((k) => {
+    const raw = b[k];
+    if (raw == null) return "";
+    const s = String(raw).trim();
+    return isUnsetDisplay(s) ? "" : s;
+  }).filter(Boolean);
+  return parts.length > 0 ? parts.join(", ") : "—";
+}
+
+/** `bookings.assignedTo`: null / missing / 0 → no employee assigned. */
+function bookingHasAssignedEmployee(booking: unknown): boolean {
+  if (booking == null || typeof booking !== "object") return false;
+  const a = (booking as { assignedTo?: unknown }).assignedTo;
+  if (a == null) return false;
+  const n = Number(a);
+  return Number.isFinite(n) && !Number.isNaN(n) && n > 0;
+}
+
+function assignedEmployeeDisplayName(booking: unknown): string {
+  const flat = registrationField(
+    booking,
+    "assignedEmployeeName",
+    "employeeName"
+  );
+  if (!isUnsetDisplay(flat)) return flat;
+  if (booking != null && typeof booking === "object" && "assignedUser" in booking) {
+    const au = (booking as { assignedUser?: { name?: string | null; lname?: string | null } })
+      .assignedUser;
+    if (au) {
+      const n = [au.name, au.lname].filter(Boolean).join(" ").trim();
+      if (n !== "" && !isUnsetDisplay(n)) return n;
+    }
+  }
+  if (booking != null && typeof booking === "object" && "assignedTo" in booking) {
+    const id = (booking as { assignedTo?: unknown }).assignedTo;
+    if (id != null && String(id).trim() !== "") return `Employee #${String(id)}`;
+  }
+  return "—";
+}
+
+function assignedEmployeeEmail(booking: unknown): string {
+  const v = registrationField(booking, "assignedEmployeeEmail", "employeeEmail");
+  if (!isUnsetDisplay(v)) return v;
+  if (booking != null && typeof booking === "object" && "assignedUser" in booking) {
+    const e = (booking as { assignedUser?: { email?: string | null } }).assignedUser?.email;
+    if (e != null) {
+      const s = String(e).trim();
+      if (s !== "" && !isUnsetDisplay(s)) return s;
+    }
+  }
+  return "—";
+}
+
+function assignedEmployeePhone(booking: unknown): string {
+  const v = registrationField(booking, "assignedEmployeePhone", "employeePhone");
+  if (!isUnsetDisplay(v)) return v;
+  if (booking != null && typeof booking === "object" && "assignedUser" in booking) {
+    const m = (booking as { assignedUser?: { mobileNumber?: string | null } }).assignedUser
+      ?.mobileNumber;
+    if (m != null) {
+      const s = String(m).trim();
+      if (s !== "" && !isUnsetDisplay(s)) return s;
+    }
+  }
+  return "—";
+}
 
 function displayServiceMints(booking: unknown): string {
   if (booking == null || typeof booking !== "object") return "—";
@@ -120,6 +222,83 @@ interface ScheduleRow {
   isCompleted?: boolean;
 }
 
+/** Pet rows on admin booking detail: from API `pets` or derived from `schedules[].pet`. */
+interface BookingPetRow {
+  id: number;
+  name?: string | null;
+  breed?: string | null;
+  gender?: string | null;
+  dob?: string | null;
+  weight?: string | null;
+  color?: string | null;
+  notes?: string | null;
+  petTypeName?: string | null;
+}
+
+function petDetailLine(v: unknown): string {
+  if (v == null) return "—";
+  const s = String(v).trim();
+  return s !== "" && !isUnsetDisplay(s) ? s : "—";
+}
+
+function bookingPetsFromResponse(booking: unknown): BookingPetRow[] {
+  if (booking == null || typeof booking !== "object") return [];
+  const b = booking as Record<string, unknown>;
+  if (Array.isArray(b.pets) && b.pets.length > 0) {
+    return (b.pets as Record<string, unknown>[]).flatMap((p) => {
+      const id = p.id;
+      if (typeof id !== "number") return [];
+      return [
+        {
+          id,
+          name: p.name != null ? String(p.name) : undefined,
+          breed: p.breed != null ? String(p.breed) : null,
+          gender: p.gender != null ? String(p.gender) : null,
+          dob: p.dob != null ? String(p.dob) : null,
+          weight: p.weight != null && String(p.weight).trim() !== ""
+            ? String(p.weight)
+            : null,
+          color: p.color != null ? String(p.color) : null,
+          notes: p.notes != null ? String(p.notes) : null,
+          petTypeName:
+            p.petTypeName != null ? String(p.petTypeName) : null,
+        },
+      ];
+    });
+  }
+  const schedules = b.schedules;
+  if (!Array.isArray(schedules)) return [];
+  const byId = new Map<number, BookingPetRow>();
+  for (const s of schedules) {
+    if (s == null || typeof s !== "object") continue;
+    const pet = (s as Record<string, unknown>).pet;
+    if (pet == null || typeof pet !== "object") continue;
+    const p = pet as Record<string, unknown>;
+    const id = p.id;
+    if (typeof id !== "number" || byId.has(id)) continue;
+    const pt = p.petType;
+    const typeName =
+      pt != null && typeof pt === "object" && "name" in pt
+        ? String((pt as { name?: unknown }).name ?? "").trim() || null
+        : null;
+    byId.set(id, {
+      id,
+      name: p.name != null ? String(p.name) : undefined,
+      breed: p.breed != null ? String(p.breed) : null,
+      gender: p.gender != null ? String(p.gender) : null,
+      dob: p.dob != null ? String(p.dob) : null,
+      weight:
+        p.weight != null && String(p.weight).trim() !== ""
+          ? String(p.weight)
+          : null,
+      color: p.color != null ? String(p.color) : null,
+      notes: p.notes != null ? String(p.notes) : null,
+      petTypeName: typeName,
+    });
+  }
+  return [...byId.values()];
+}
+
 export default function EditBookingStatus() {
   const router = useRouter();
   const params = useParams();
@@ -131,19 +310,28 @@ export default function EditBookingStatus() {
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
 
-  const { data: bookingData, fetchApi: fetchBooking, loading: loadingBooking } = useApi({
-    url: `/api/users/booking/${id}`,
-    method: "GET",
-    type: "manual",
-    requiresAuth: true,
-  });
+  const bookingApiOpts = useMemo(
+    () => ({
+      url: `/api/users/booking/${id}`,
+      method: "GET" as const,
+      type: "manual" as const,
+      requiresAuth: true,
+    }),
+    [id]
+  );
+  const { data: bookingData, fetchApi: fetchBooking, loading: loadingBooking } =
+    useApi(bookingApiOpts);
 
-  const { sendData, loading: saving } = useApi({
-    url: `/api/users/booking/${id}`,
-    method: "PATCH",
-    type: "manual",
-    requiresAuth: true,
-  });
+  const bookingPatchOpts = useMemo(
+    () => ({
+      url: `/api/users/booking/${id}`,
+      method: "PATCH" as const,
+      type: "manual" as const,
+      requiresAuth: true,
+    }),
+    [id]
+  );
+  const { sendData, loading: saving } = useApi(bookingPatchOpts);
 
   const { data: employeesData, fetchApi: fetchEmployees } = useApi({
     url: "/api/admin/employee",
@@ -261,6 +449,11 @@ export default function EditBookingStatus() {
     return [];
   }, [bookingData]);
 
+  const bookingPets = useMemo(
+    () => bookingPetsFromResponse(bookingData),
+    [bookingData]
+  );
+
   const selectedEmployeeScheduleDisplay = useMemo(() => {
     if (assignedTo === "" || Number.isNaN(Number(assignedTo))) {
       return { kind: "none" as const };
@@ -339,232 +532,352 @@ export default function EditBookingStatus() {
     );
   }
 
+  const detailLabelClass =
+    "text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400";
+  const detailValueClass =
+    "mt-1 text-sm font-medium text-gray-900 dark:text-gray-100";
+  const sectionCardClass =
+    "rounded-xl border border-gray-200/90 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-950/50 dark:shadow-none sm:p-6";
+  const sectionTitleClass =
+    "text-sm font-semibold text-gray-900 dark:text-white";
+
   return (
-    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white px-4 pb-3 pt-4 dark:border-gray-800 sm:px-6">
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">Edit Booking Status</h3>
-          <p className="mt-1 text-sm text-gray-500">Booking #{bookingData?.id}</p>
+    <div className="overflow-hidden rounded-2xl border border-gray-200/90 bg-white shadow-sm ring-1 ring-black/[0.03] dark:border-gray-800 dark:bg-gray-900 dark:ring-white/[0.04]">
+      <div className="border-b border-gray-100 bg-gray-50/80 px-4 py-6 dark:border-gray-800 dark:bg-gray-950/60 sm:px-8">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0 space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+              Booking record
+            </p>
+            <h3 className="text-xl font-semibold tracking-tight text-gray-900 dark:text-white">
+              Booking #{bookingData?.id}
+            </h3>
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              {bookingData?.status ? (
+                <Badge size="sm" color={statusColor(String(bookingData.status))}>
+                  {String(bookingData.status)}
+                </Badge>
+              ) : null}
+              {bookingData?.categoryName || bookingData?.serviceName ? (
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  {[bookingData?.categoryName, bookingData?.serviceName]
+                    .filter(Boolean)
+                    .join(" · ") || null}
+                </span>
+              ) : null}
+            </div>
+          </div>
+          <div className="flex shrink-0 justify-end sm:pt-1">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => router.push(`/admin/chat?bookingId=${bookingData?.id ?? id}`)}
+              className="!flex-none gap-1.5 !py-2 !px-3.5 text-xs inline-flex w-auto shrink-0 items-center"
+            >
+              <MessageCircle className="h-3.5 w-3.5" aria-hidden />
+              Chat
+            </Button>
+          </div>
         </div>
-        <Button
-          type="button"
-          variant="secondary"
-          onClick={() => router.push(`/admin/chat?bookingId=${bookingData?.id ?? id}`)}
-          className="inline-flex items-center gap-2"
-        >
-          <MessageCircle className="h-4 w-4" aria-hidden />
-          Chat
-        </Button>
       </div>
 
-      <div className="mb-6 rounded-xl border border-gray-100 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-gray-800/30">
-        <h4 className="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">Booking details</h4>
-        <dl className="grid gap-2 text-sm sm:grid-cols-2">
-          <div>
-            <dt className="text-gray-500">User name</dt>
-            <dd className="font-medium text-gray-800 dark:text-white">{bookingData?.userName ?? bookingData?.userId ?? "—"}</dd>
+      <div className="space-y-6 px-4 py-6 sm:px-8 sm:py-8">
+        <section className={sectionCardClass} aria-labelledby="person-details-heading">
+          <div className="mb-5 border-b border-gray-100 pb-4 dark:border-gray-800">
+            <h4 id="person-details-heading" className={sectionTitleClass}>
+              Person details
+            </h4>
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              Customer contact and registration on file
+            </p>
           </div>
-          <div>
-            <dt className="text-gray-500">Email</dt>
-            <dd className="font-medium text-gray-800 dark:text-white">{bookingData?.userEmail ?? "—"}</dd>
+          <dl className="grid gap-x-8 gap-y-5 text-sm sm:grid-cols-2">
+            <div>
+              <dt className={detailLabelClass}>Name</dt>
+              <dd className={detailValueClass}>
+                {registrationDisplayName(bookingData)}
+              </dd>
+            </div>
+            <div>
+              <dt className={detailLabelClass}>Email</dt>
+              <dd className={detailValueClass}>
+                {registrationField(bookingData, "userEmail", "email")}
+              </dd>
+            </div>
+            <div>
+              <dt className={detailLabelClass}>Mobile number</dt>
+              <dd className={detailValueClass}>
+                {registrationField(bookingData, "userPhone", "mobileNumber")}
+              </dd>
+            </div>
+            <div>
+              <dt className={detailLabelClass}>Emergency contact name</dt>
+              <dd className={detailValueClass}>
+                {registrationField(
+                  bookingData,
+                  "emergencyContactName",
+                  "emergencyname"
+                )}
+              </dd>
+            </div>
+            <div>
+              <dt className={detailLabelClass}>Emergency contact phone</dt>
+              <dd className={detailValueClass}>
+                {registrationField(
+                  bookingData,
+                  "emergencyContactPhone",
+                  "emergencyNumber"
+                )}
+              </dd>
+            </div>
+            <div className="sm:col-span-2">
+              <dt className={detailLabelClass}>Address</dt>
+              <dd
+                className={`${detailValueClass} break-words leading-relaxed`}
+              >
+                {registrationCombinedAddress(bookingData)}
+              </dd>
+            </div>
+          </dl>
+        </section>
+
+        <section className={sectionCardClass} aria-labelledby="pets-details-heading">
+          <div className="mb-5 flex flex-wrap items-end justify-between gap-3 border-b border-gray-100 pb-4 dark:border-gray-800">
+            <div>
+              <h4 id="pets-details-heading" className={sectionTitleClass}>
+                Pets
+              </h4>
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                Animals included on this booking
+              </p>
+            </div>
+            <p className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold tabular-nums text-gray-700 dark:bg-gray-800 dark:text-gray-300">
+              Total: {bookingPets.length}
+            </p>
           </div>
-          <div>
-            <dt className="text-gray-500">Phone</dt>
-            <dd className="font-medium text-gray-800 dark:text-white">{bookingData?.userPhone ?? "—"}</dd>
+          {bookingPets.length === 0 ? (
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              No pets linked to this booking&apos;s schedules yet.
+            </p>
+          ) : (
+            <div className="flex flex-col gap-4">
+              {bookingPets.map((pet) => (
+                <div
+                  key={pet.id}
+                  className="rounded-lg border border-gray-100 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-gray-900/60 sm:p-5"
+                >
+                  <p className="mb-4 border-b border-gray-100 pb-3 text-sm font-semibold text-gray-900 dark:border-gray-800 dark:text-white">
+                    {pet.name != null &&
+                    String(pet.name).trim() !== "" &&
+                    !isUnsetDisplay(String(pet.name))
+                      ? String(pet.name).trim()
+                      : `Pet #${pet.id}`}
+                  </p>
+                  <dl className="grid gap-x-6 gap-y-4 text-sm sm:grid-cols-2">
+                    <div>
+                      <dt className={detailLabelClass}>Type</dt>
+                      <dd className={detailValueClass}>
+                        {petDetailLine(pet.petTypeName)}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className={detailLabelClass}>Breed</dt>
+                      <dd className={detailValueClass}>
+                        {petDetailLine(pet.breed)}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className={detailLabelClass}>Gender</dt>
+                      <dd className={detailValueClass}>
+                        {petDetailLine(pet.gender)}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className={detailLabelClass}>Date of birth</dt>
+                      <dd className={detailValueClass}>
+                        {petDetailLine(pet.dob)}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className={detailLabelClass}>Weight</dt>
+                      <dd className={detailValueClass}>
+                        {petDetailLine(pet.weight)}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className={detailLabelClass}>Color</dt>
+                      <dd className={detailValueClass}>
+                        {displayPetColor(pet.color)}
+                      </dd>
+                    </div>
+                  </dl>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className={sectionCardClass} aria-labelledby="booking-details-heading">
+          <div className="mb-5 border-b border-gray-100 pb-4 dark:border-gray-800">
+            <h4 id="booking-details-heading" className={sectionTitleClass}>
+              Service &amp; schedule
+            </h4>
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              Primary slot summary from the booking
+            </p>
           </div>
-          <div>
-            <dt className="text-gray-500">Category / Service</dt>
-            <dd className="font-medium text-gray-800 dark:text-white">{bookingData?.categoryName ?? "—"} / {bookingData?.serviceName ?? "—"}</dd>
+          <dl className="grid gap-x-8 gap-y-5 text-sm sm:grid-cols-2">
+            <div className="sm:col-span-2">
+              <dt className={detailLabelClass}>Category / Service</dt>
+              <dd className={detailValueClass}>
+                {bookingData?.categoryName ?? "—"} /{" "}
+                {bookingData?.serviceName ?? "—"}
+              </dd>
+            </div>
+            <div>
+              <dt className={detailLabelClass}>Schedule date</dt>
+              <dd className={detailValueClass}>
+                {bookingData?.scheduleDate
+                  ? formatDateOnly(bookingData.scheduleDate)
+                  : "—"}
+              </dd>
+            </div>
+            <div>
+              <dt className={detailLabelClass}>Schedule time</dt>
+              <dd className={detailValueClass}>
+                {bookingData?.scheduleTime ? bookingData.scheduleTime : "—"}
+              </dd>
+            </div>
+          </dl>
+        </section>
+
+        <section className={sectionCardClass} aria-labelledby="employee-details-heading">
+          <div className="mb-5 border-b border-gray-100 pb-4 dark:border-gray-800">
+            <h4 id="employee-details-heading" className={sectionTitleClass}>
+              Assigned employee
+            </h4>
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              Staff member responsible for this booking
+            </p>
           </div>
-          <div>
-            <dt className="text-gray-500">Service Duration</dt>
-            <dd className="font-medium text-gray-800 dark:text-white">
-              {displayServiceMints(bookingData)}
-            </dd>
+          {!bookingHasAssignedEmployee(bookingData) ? (
+            <div
+              className="rounded-lg border border-amber-200/80 bg-amber-50/90 px-4 py-3 text-sm text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/25 dark:text-amber-100/90"
+              role="status"
+            >
+              This booking is not assigned to any employee.
+            </div>
+          ) : (
+            <dl className="grid gap-x-8 gap-y-5 text-sm sm:grid-cols-2">
+              <div>
+                <dt className={detailLabelClass}>Name</dt>
+                <dd className={detailValueClass}>
+                  {assignedEmployeeDisplayName(bookingData)}
+                </dd>
+              </div>
+              <div>
+                <dt className={detailLabelClass}>Email</dt>
+                <dd className={detailValueClass}>
+                  {assignedEmployeeEmail(bookingData)}
+                </dd>
+              </div>
+            </dl>
+          )}
+        </section>
+
+        <form
+          onSubmit={handleSubmit}
+          className={`${sectionCardClass} border-dashed border-gray-200 dark:border-gray-700`}
+        >
+          <div className="mb-6 border-b border-gray-100 pb-4 dark:border-gray-800">
+            <h4 className={sectionTitleClass}>Update booking</h4>
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              Assign staff and set status — changes apply on save
+            </p>
           </div>
-          <div>
-            <dt className="text-gray-500">Total</dt>
-            <dd className="font-medium text-gray-800 dark:text-white">${Number(bookingData?.totalPrice ?? 0).toFixed(2)}</dd>
-          </div>
-          <div>
-            <dt className="text-gray-500">Schedule</dt>
-            <dd className="font-medium text-gray-800 dark:text-white">
-              {bookingData?.scheduleSlot != null &&
-                    String(bookingData.scheduleSlot).trim() !== ""
-                      ? String(bookingData.scheduleSlot).trim()
-                      : (bookingData.scheduleTime ?? "—")}
-            </dd>
-          </div>
-          <div className="sm:col-span-2">
-            <dt className="mb-1.5 text-gray-500">Assigned employee</dt>
-            <dd>
+
+          <div className="grid gap-6 sm:grid-cols-2 sm:gap-8">
+            <div className="space-y-2">
+              <label
+                htmlFor="assign-employee"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              >
+                Assign employee
+              </label>
               <select
+                id="assign-employee"
                 value={assignedTo}
                 onChange={(e) => setAssignedTo(e.target.value)}
-                className="w-full max-w-xs rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm transition-colors focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
               >
                 <option value="">— Select employee —</option>
-                {employees.map((emp: { id: number; name?: string | null; email?: string | null }) => (
-                  <option key={emp.id} value={emp.id}>
-                    {emp.name ?? emp.email ?? `Employee #${emp.id}`}
+                {employees.map(
+                  (emp: {
+                    id: number;
+                    name?: string | null;
+                    email?: string | null;
+                  }) => (
+                    <option key={emp.id} value={emp.id}>
+                      {emp.name ?? emp.email ?? `Employee #${emp.id}`}
+                    </option>
+                  )
+                )}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label
+                htmlFor="booking-status"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              >
+                Status
+              </label>
+              <select
+                id="booking-status"
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm transition-colors focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
+              >
+                {BOOKING_STATUSES.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
                   </option>
                 ))}
               </select>
-              {assignedTo !== "" && !Number.isNaN(Number(assignedTo)) && (
-                <div className="mt-2 rounded-lg border border-gray-200 bg-white px-3 py-2 dark:border-gray-700 dark:bg-gray-900/40">
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Schedule time slots
-                  </p>
-                  {selectedEmployeeScheduleDisplay.kind === "slots" ? (
-                    <div
-                      className="mt-0.5 space-y-2 text-sm text-gray-800 dark:text-white"
-                      role="radiogroup"
-                      aria-label="Choose one schedule slot"
-                    >
-                      {selectedEmployeeScheduleDisplay.lines.map((line, i) => (
-                        <label
-                          key={`${line}-${i}`}
-                          className="flex cursor-pointer items-start gap-2 font-medium"
-                        >
-                          <input
-                            type="radio"
-                            name={`sub-slot-${id}`}
-                            value={line}
-                            checked={selectedSubSlot === line}
-                            onChange={() => setSelectedSubSlot(line)}
-                            className="mt-0.5 h-4 w-4 shrink-0 border-gray-300 text-indigo-600 focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-800"
-                          />
-                          <span className="leading-snug">{line}</span>
-                        </label>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm font-medium text-gray-800 dark:text-white">
-                      {selectedEmployeeScheduleDisplay.kind === "plain"
-                        ? selectedEmployeeScheduleDisplay.text
-                        : "—"}
-                    </p>
-                  )}
-                </div>
-              )}
-            </dd>
+            </div>
           </div>
-          <div>
-            <dt className="text-gray-500">Current status</dt>
-            <dd>
-              <Badge size="sm" color={statusColor(bookingData?.status ?? "PENDING")}>
-                {bookingData?.status ?? "PENDING"}
-              </Badge>
-            </dd>
+
+          {errorMsg && (
+            <p className="mt-4 text-sm font-medium text-red-600 dark:text-red-400">
+              {errorMsg}
+            </p>
+          )}
+          {successMsg && (
+            <p className="mt-4 text-sm font-medium text-green-600 dark:text-green-400">
+              {successMsg}
+            </p>
+          )}
+
+          <div className="mt-8 flex flex-wrap justify-end gap-3 border-t border-gray-100 pt-6 dark:border-gray-800">
+            <Button
+              type="submit"
+              variant="secondary"
+              loading={saving}
+              className="!flex-none w-40 sm:w-44"
+            >
+              Save status
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => router.push("/admin/booking")}
+              className="!flex-none w-40 sm:w-44"
+            >
+              Back to list
+            </Button>
           </div>
-        </dl>
+        </form>
       </div>
-
-      {/* Booking schedules from same API response */}
-      <div className="mb-6 rounded-xl border border-gray-100 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-gray-800/30">
-        <h4 className="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">
-          Booking schedules
-        </h4>
-        <div className="max-w-full overflow-x-auto">
-          <Table>
-            <TableHeader className="border-gray-100 dark:border-gray-800 border-y">
-              <TableRow>
-                <TableCell
-                  isHeader
-                  className="py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
-                >
-                  Schedule date
-                </TableCell>
-                <TableCell
-                  isHeader
-                  className="py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
-                >
-                  Schedule time
-                </TableCell>
-                <TableCell
-                  isHeader
-                  className="py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
-                >
-                  Started
-                </TableCell>
-                <TableCell
-                  isHeader
-                  className="py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
-                >
-                  Completed
-                </TableCell>
-              </TableRow>
-            </TableHeader>
-            <TableBody className="divide-y divide-gray-100 dark:divide-gray-800">
-              {scheduleRows.length > 0 ? (
-                scheduleRows.map((row: ScheduleRow, idx: number) => (
-                  <TableRow key={row.id ?? idx}>
-                    <TableCell className="py-3 text-gray-500 text-theme-sm dark:text-gray-400">
-                      {row.scheduleDate ? formatDateOnly(row.scheduleDate) : "—"}
-                    </TableCell>
-                    <TableCell className="py-3 text-gray-500 text-theme-sm dark:text-gray-400">
-                      {row.scheduleSlot != null &&
-                    String(row.scheduleSlot).trim() !== ""
-                      ? String(row.scheduleSlot).trim()
-                      : (row.scheduleTime ?? "—")}
-                    </TableCell>
-                    <TableCell className="py-3 text-gray-500 text-theme-sm dark:text-gray-400">
-                      {!!row.isStarted ? "Yes" : "No"}
-                    </TableCell>
-                    <TableCell className="py-3 text-gray-500 text-theme-sm dark:text-gray-400">
-                      {!!row.isCompleted ? "Yes" : "No"}
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell
-                    colSpan={4}
-                    className="py-6 text-center text-gray-500 text-theme-sm dark:text-gray-400"
-                  >
-                    No schedule entries.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </div>
-
-      <form onSubmit={handleSubmit} className="max-w-md">
-        <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-          Status
-        </label>
-        <select
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-800 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-        >
-          {BOOKING_STATUSES.map((s) => (
-            <option key={s} value={s}>{s}</option>
-          ))}
-        </select>
-
-        {errorMsg && (
-          <p className="mt-2 text-sm text-red-600 dark:text-red-400">{errorMsg}</p>
-        )}
-        {successMsg && (
-          <p className="mt-2 text-sm text-green-600 dark:text-green-400">{successMsg}</p>
-        )}
-
-        <div className="mt-6 flex gap-3">
-          <Button type="submit" loading={saving}>
-            Save status
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => router.push("/admin/booking")}
-          >
-            Back to list
-          </Button>
-        </div>
-      </form>
     </div>
   );
 }

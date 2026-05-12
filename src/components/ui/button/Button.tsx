@@ -42,9 +42,10 @@ const Button: FC<ButtonProps> = ({
   return (
     <button
       type={type} // ✅ Supported
-      className={`inline-flex items-center justify-center font-medium gap-2 rounded-lg transition ${className} 
-        ${sizeClasses[size]} ${variantClasses[variant]} 
-        ${disabled || loading ? "cursor-not-allowed opacity-50" : ""}`}
+      className={`inline-flex items-center justify-center font-medium gap-2 rounded-lg transition
+        ${sizeClasses[size]} ${variantClasses[variant]}
+        ${disabled || loading ? "cursor-not-allowed opacity-50" : ""}
+        ${className}`}
       disabled={disabled || loading}
       {...rest}
     >

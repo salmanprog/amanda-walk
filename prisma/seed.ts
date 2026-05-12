@@ -106,12 +106,22 @@ async function main() {
 
   const servicesCategories = [
     {
-      title: "Dog Walk",
+      title: "Dog Walking",
       slug: "dog-walk",
       description:
         "Lorem Ipsum is simply dummy text of the printing and typesetting industry...",
       imageUrl: "",
-      seoTitle: "Dog Walk",
+      seoTitle: "Dog Walking",
+      seoDescription:
+        "Lorem Ipsum is simply dummy text of the printing and typesetting industry...",
+    },
+    {
+      title: "Double Dogs",
+      slug: "double-dogs",
+      description:
+        "Lorem Ipsum is simply dummy text of the printing and typesetting industry...",
+      imageUrl: "",
+      seoTitle: "Double Dogs",
       seoDescription:
         "Lorem Ipsum is simply dummy text of the printing and typesetting industry...",
     }
@@ -146,7 +156,7 @@ async function main() {
       seoTitle: "15 Min Dog Walk AM",
       seoDescription:
         "Lorem Ipsum is simply dummy text of the printing and typesetting industry...",
-      price: 10,
+      price: 18,
       status: true,
     },
     {
@@ -161,7 +171,7 @@ async function main() {
       seoTitle: "20 Min Dog Walk AM",
       seoDescription:
         "Lorem Ipsum is simply dummy text of the printing and typesetting industry...",
-      price: 15,
+      price: 20,
       status: true,
     },
     {
@@ -176,9 +186,39 @@ async function main() {
       seoTitle: "30 Min Dog Walk AM",
       seoDescription:
         "Lorem Ipsum is simply dummy text of the printing and typesetting industry...",
-      price: 20,
+      price: 28,
       status: true,
-    }
+    },
+    {
+      title: "2 Dogs (30-35 Minute Walks)",
+      slug: "2-dogs-30-35-minute-walks",
+      userId: 1,
+      servicesCategoryId: 2,
+      description:
+        "Lorem Ipsum is simply dummy text of the printing and typesetting industry...",
+      mints: "35",
+      imageUrl: "",
+      seoTitle: "2 Dogs (30-35 Minute Walks)",
+      seoDescription:
+        "Lorem Ipsum is simply dummy text of the printing and typesetting industry...",
+      price: 32,
+      status: true,
+    },
+    {
+      title: "3 Dogs (45-50 Minute Walks)",
+      slug: "3-dogs-45-50-minute-walks",
+      userId: 1,
+      servicesCategoryId: 2,
+      description:
+        "Lorem Ipsum is simply dummy text of the printing and typesetting industry...",
+      mints: "45",
+      imageUrl: "",
+      seoTitle: "3 Dogs (45-50 Minute Walks)",
+      seoDescription:
+        "Lorem Ipsum is simply dummy text of the printing and typesetting industry...",
+      price: 50,
+      status: true,
+    },
   ];
   
   for (const service of services) {
@@ -420,20 +460,20 @@ async function main() {
     sortOrder: 1,
   });
 
-  // MAIN SECTION - Bookings (Parent)
-  const EmployeebookingsModule = await findOrCreateModule({
-    name: "Bookings",
+  // Employee-facing list (must NOT share name + parentId with admin "Bookings",
+  // or findOrCreateModule merges rows and overwrites routeName to employee-bookings.)
+  const employeeBookingsParentModule = await findOrCreateModule({
+    name: "Employee bookings",
     routeName: "#",
     icon: "Calendar",
     sortOrder: sortOrder++,
   });
 
-  // MAIN SECTION - Bookings (Child)
   const allEmployeeBookingsModule = await findOrCreateModule({
-    name: "All Bookings",
+    name: "Assigned bookings",
     routeName: "/admin/employee-bookings/",
     icon: null,
-    parentId: EmployeebookingsModule.id,
+    parentId: employeeBookingsParentModule.id,
     sortOrder: 1,
   });
 
@@ -508,7 +548,7 @@ async function main() {
   const clientModules = [
     dashboardModule,
     allEmployeeServicesModule,
-    EmployeebookingsModule,
+    employeeBookingsParentModule,
     allEmployeeBookingsModule,
   ];
   

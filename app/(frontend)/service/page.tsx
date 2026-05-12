@@ -1,6 +1,6 @@
 "use client"; // Add this directive at the top
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Button from "@/components/ui/button/Button";
 import toast from "react-hot-toast";
 import { motion } from "framer-motion";
@@ -42,6 +42,20 @@ interface ServiceCategoryFromApi {
   slug: string;
   description?: string | null;
   imageUrl?: string | null;
+}
+
+function parseServicePrice(raw: unknown): number {
+  if (raw == null) return 0;
+  if (typeof raw === "number") return Number.isFinite(raw) ? raw : 0;
+  const n = parseFloat(String(raw).replace(/[^0-9.-]/g, ""));
+  return Number.isFinite(n) ? n : 0;
+}
+
+function formatMoneyUsd(n: number): string {
+  return n.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 }
 
 export default function ServicePage() {
@@ -232,6 +246,25 @@ export default function ServicePage() {
     toast.success("Slot removed");
   };
 
+  const selectedServiceObj = useMemo(
+    () =>
+      selectedService != null
+        ? categoryServices.find((s) => s.id === selectedService)
+        : undefined,
+    [selectedService, categoryServices]
+  );
+
+  const unitPriceAmount = useMemo(
+    () => parseServicePrice(selectedServiceObj?.price),
+    [selectedServiceObj]
+  );
+
+  const totalBookingAmount = useMemo(
+    () =>
+      unitPriceAmount * selectedPets.length * appointments.length,
+    [unitPriceAmount, selectedPets.length, appointments.length]
+  );
+
   // Handle submit
   const handleSubmit = async () => {
     if (selectedPets.length === 0) {
@@ -249,8 +282,14 @@ export default function ServicePage() {
       return;
     }
 
-    const selectedServiceObj = categoryServices.find((s) => s.id === selectedService);
-    const totalPrice = selectedServiceObj?.price != null ? String(selectedServiceObj.price) : "0";
+    const svc = categoryServices.find((s) => s.id === selectedService);
+    const unit = parseServicePrice(svc?.price);
+    const totalNumeric =
+      unit * selectedPets.length * appointments.length;
+    const totalPrice =
+      Number.isFinite(totalNumeric) && totalNumeric >= 0
+        ? totalNumeric.toFixed(2)
+        : "0";
 
     setLoading(true);
 
@@ -268,7 +307,7 @@ export default function ServicePage() {
         discount: "0",
         totalPrice,
         employeeId: 0,
-        petId: selectedPets[0],
+        petIds: selectedPets,
         schedule: JSON.stringify(schedule),
       });
 
@@ -302,7 +341,10 @@ export default function ServicePage() {
 
       {/* PET CHECKBOXES */}
       <div className="mb-10">
-        <h2 className="text-sm font-bold text-gray-700 mb-4 text-center">Select Pets</h2>
+        <h2 className="text-sm font-bold text-gray-700 mb-1 text-center">Select pets</h2>
+        <p className="mb-4 text-center text-xs text-gray-500">
+          Select one or more pets for this booking
+        </p>
 
         {loadingPets ? (
           <div className="text-center py-4">
@@ -407,7 +449,12 @@ export default function ServicePage() {
                   <p className="text-gray-500 text-sm font-medium">{service.description}</p>
                 </div>
                 <div className="text-right flex flex-col items-end">
-                  <span className="text-xl font-bold text-[#1E293B]">{service.price}</span>
+                  <span className="text-xl font-bold text-[#1E293B]">
+                    ${formatMoneyUsd(parseServicePrice(service.price))}
+                  </span>
+                  <span className="text-[11px] font-medium text-gray-400 mt-0.5">
+                    per pet · per slot
+                  </span>
                   <Info size={18} className="text-gray-300 mt-1" />
                 </div>
               </div>
@@ -517,6 +564,33 @@ export default function ServicePage() {
               </div>
             ))}
           </div>
+          {selectedService != null &&
+            selectedPets.length > 0 &&
+            selectedServiceObj != null && (
+              <div className="mt-4 rounded-xl border border-gray-100 bg-[#F8FAFC] p-4 shadow-inner dark:border-gray-700 dark:bg-gray-900/40">
+                <p className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                  Booking amount
+                </p>
+                <div className="flex justify-between gap-4 text-sm text-gray-600">
+                  <span>Service price (each pet)</span>
+                  <span className="font-semibold text-[#1E293B] dark:text-gray-200">
+                    ${formatMoneyUsd(unitPriceAmount)}
+                  </span>
+                </div>
+                <div className="mt-2 flex justify-between gap-4 text-sm text-gray-600">
+                  <span>Pets</span>
+                  <span className="font-medium tabular-nums text-gray-800 dark:text-gray-200">
+                    {selectedPets.length} × {appointments.length}
+                  </span>
+                </div>
+                <div className="mt-4 flex justify-between border-t border-gray-200 pt-3 text-base font-bold text-[#1E293B] dark:text-white">
+                  <span>Total</span>
+                  <span className="tabular-nums">
+                    ${formatMoneyUsd(totalBookingAmount)}
+                  </span>
+                </div>
+              </div>
+            )}
         </div>
       )}
 

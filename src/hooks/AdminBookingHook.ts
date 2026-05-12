@@ -25,7 +25,20 @@ export default class AdminBookingHook {
     };
     query.include = {
       user: {
-        select: { name: true, lname: true, email: true, mobileNumber: true },
+        select: {
+          name: true,
+          lname: true,
+          email: true,
+          mobileNumber: true,
+          emergencyname: true,
+          emergencyNumber: true,
+          streetAddress: true,
+          city: true,
+          state: true,
+          postalCode: true,
+          country: true,
+          vetName: true,
+        },
       },
       assignedUser: {
         select: { id: true, name: true, lname: true, email: true, mobileNumber: true },
@@ -71,7 +84,22 @@ export default class AdminBookingHook {
   ): Promise<any> {
     query.where = { ...query.where, deletedAt: null };
     query.include = {
-      user: { select: { name: true, lname: true, email: true, mobileNumber: true } },
+      user: {
+        select: {
+          name: true,
+          lname: true,
+          email: true,
+          mobileNumber: true,
+          emergencyname: true,
+          emergencyNumber: true,
+          streetAddress: true,
+          city: true,
+          state: true,
+          postalCode: true,
+          country: true,
+          vetName: true,
+        },
+      },
       assignedUser: {
         select: { id: true, name: true, lname: true, email: true, mobileNumber: true },
       },

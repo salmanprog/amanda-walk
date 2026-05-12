@@ -17,7 +17,20 @@ export type ExtendedBooking = {
   createdAt?: Date;
   updatedAt?: Date;
   deletedAt?: Date | null;
-  user?: { name?: string | null; lname?: string | null; email?: string | null; mobileNumber?: string | null } | null;
+  user?: {
+    name?: string | null;
+    lname?: string | null;
+    email?: string | null;
+    mobileNumber?: string | null;
+    emergencyname?: string | null;
+    emergencyNumber?: string | null;
+    streetAddress?: string | null;
+    city?: string | null;
+    state?: string | null;
+    postalCode?: string | null;
+    country?: string | null;
+    vetName?: string | null;
+  } | null;
   assignedUser?: {
     id?: number;
     name?: string | null;
@@ -65,6 +78,12 @@ function personDisplayName(
   return n !== "" ? n : null;
 }
 
+function trimmedStr(v: unknown): string | null {
+  if (v == null) return null;
+  const s = String(v).trim();
+  return s === "" ? null : s;
+}
+
 function mapPetFields(
   pet:
     | {
@@ -97,15 +116,61 @@ function mapPetFields(
   };
 }
 
+/** One entry per distinct pet appearing on booking schedules (for admin/detail UIs). */
+function uniquePetsFromSchedules(
+  schedules: ExtendedBooking["schedules"]
+): Array<Record<string, unknown>> {
+  const seen = new Set<number>();
+  const out: Array<Record<string, unknown>> = [];
+  for (const s of schedules ?? []) {
+    const pet = s.pet;
+    if (pet?.id == null) continue;
+    if (seen.has(pet.id)) continue;
+    const m = mapPetFields(pet);
+    if (!m) continue;
+    seen.add(pet.id);
+    out.push({
+      id: pet.id,
+      name: m.petName ?? "—",
+      breed: m.petBreed,
+      gender: m.petGender,
+      dob: m.petDob,
+      weight: m.petWeight,
+      color: m.petColor,
+      notes: m.petNotes,
+      petTypeName: m.petTypeName,
+    });
+  }
+  return out;
+}
+
 export default class AdminBookingResource extends BaseResource<ExtendedBooking> {
   
   // Transform a single record
   async toArray(booking: ExtendedBooking): Promise<Record<string, unknown>> {
-    const userName = booking.user
-      ? [booking.user.name, booking.user.lname].filter(Boolean).join(" ") || "—"
+    const u = booking.user;
+    const userName = u
+      ? [u.name, u.lname].filter(Boolean).join(" ") || "—"
       : "—";
-    const userEmail = booking.user?.email ?? null;
-    const userPhone = booking.user?.mobileNumber ?? null;
+    const userEmail = u?.email ?? null;
+    const userPhone = u?.mobileNumber ?? null;
+    const emergencyContactName = trimmedStr(u?.emergencyname);
+    const emergencyContactPhone = trimmedStr(u?.emergencyNumber);
+    const streetAddress = trimmedStr(u?.streetAddress);
+    const city = trimmedStr(u?.city);
+    const state = trimmedStr(u?.state);
+    const postalCode = trimmedStr(u?.postalCode);
+    const country = trimmedStr(u?.country);
+    const vetName = trimmedStr(u?.vetName);
+    const addressPieces = [
+      streetAddress,
+      city,
+      state,
+      postalCode,
+      country,
+    ].filter((x): x is string => x != null && x !== "");
+    const registrationAddressLine =
+      addressPieces.length > 0 ? addressPieces.join(", ") : null;
     const au = booking.assignedUser;
     const assignedEmployeeName = personDisplayName(au);
     const assignedEmployeeEmail = au?.email ?? null;
@@ -148,6 +213,17 @@ export default class AdminBookingResource extends BaseResource<ExtendedBooking> 
       userName,
       userEmail,
       userPhone,
+      emergencyContactName,
+      emergencyContactPhone,
+      emergencyname: emergencyContactName,
+      emergencyNumber: emergencyContactPhone,
+      streetAddress,
+      city,
+      state,
+      postalCode,
+      country,
+      registrationAddressLine,
+      vetName,
       assignedEmployeeName,
       assignedEmployeeEmail,
       assignedEmployeePhone,
@@ -171,6 +247,7 @@ export default class AdminBookingResource extends BaseResource<ExtendedBooking> 
       isStarted: firstSchedule?.isStarted ?? false,
       isCompleted: firstSchedule?.isCompleted ?? false,
       schedules,
+      pets: uniquePetsFromSchedules(booking.schedules),
     };
   }
 

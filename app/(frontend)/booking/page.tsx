@@ -281,7 +281,7 @@ export default function BookingListPage() {
                     {formatBookingScheduleDate(booking.scheduleDate ?? undefined)}
                   </TableCell>
                   <TableCell className="py-3 text-gray-500 text-theme-sm dark:text-gray-400">
-                    {displayScheduleSlotOrTime(booking.scheduleSlot, booking.scheduleTime)}
+                    {booking.scheduleTime}
                   </TableCell>
                   <TableCell className="py-3 text-gray-500 text-theme-sm dark:text-gray-400">
                     ${Number(booking.totalPrice).toFixed(2)}
@@ -418,10 +418,7 @@ export default function BookingListPage() {
                 <div>
                   <dt className="text-gray-500 dark:text-gray-400">Schedule time</dt>
                   <dd className="font-medium text-gray-900 dark:text-white">
-                    {displayScheduleSlotOrTime(
-                      viewBookingDetails.scheduleSlot,
-                      viewBookingDetails.scheduleTime
-                    )}
+                    {viewBookingDetails.scheduleTime}
                   </dd>
                 </div>
                 <div>

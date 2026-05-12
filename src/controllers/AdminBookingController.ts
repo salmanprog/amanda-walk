@@ -35,6 +35,30 @@ export default class AdminBookingController extends RestController<
     this.getCurrentUser();
   }
 
+  /** Ensure `user` relation is loaded with profile fields (signup / registration). */
+  protected async afterShow(record: ExtendedBooking): Promise<ExtendedBooking> {
+    if (record?.userId == null) return record;
+    const userRow = await prisma.user.findUnique({
+      where: { id: record.userId },
+      select: {
+        name: true,
+        lname: true,
+        email: true,
+        mobileNumber: true,
+        emergencyname: true,
+        emergencyNumber: true,
+        streetAddress: true,
+        city: true,
+        state: true,
+        postalCode: true,
+        country: true,
+        vetName: true,
+      },
+    });
+    if (!userRow) return record;
+    return { ...record, user: userRow as ExtendedBooking["user"] };
+  }
+
   protected async beforeStore(): Promise<void | NextResponse> {
     const currentUser = this.getCurrentUser();
     if (!currentUser) {
@@ -58,18 +82,47 @@ export default class AdminBookingController extends RestController<
 
     (this as any)._employeeIdTemp = (this.data as any).employeeId;
     (this as any)._petIdTemp = (this.data as any).petId;
+    (this as any)._petIdsTemp = (this.data as any).petIds;
     (this as any)._scheduleTemp = (this.data as any).schedule;
 
     delete (this.data as any).employeeId;
     delete (this.data as any).petId;
+    delete (this.data as any).petIds;
     delete (this.data as any).schedule;
+  }
+
+  /** Normalize pet id list from body: `petIds` array or JSON string, else single `petId`. */
+  private parsePetIdsFromStorePayload(): number[] {
+    const rawIds = (this as any)._petIdsTemp;
+    const single = Number((this as any)._petIdTemp);
+    const fromNumber = (v: unknown): number | null => {
+      const n = Number(v);
+      return Number.isFinite(n) && n > 0 ? Math.trunc(n) : null;
+    };
+
+    let out: number[] = [];
+    if (Array.isArray(rawIds)) {
+      out = rawIds.map(fromNumber).filter((n): n is number => n != null);
+    } else if (typeof rawIds === "string" && rawIds.trim() !== "") {
+      try {
+        const parsed = JSON.parse(rawIds) as unknown;
+        if (Array.isArray(parsed)) {
+          out = parsed.map(fromNumber).filter((n): n is number => n != null);
+        }
+      } catch {
+        out = [];
+      }
+    }
+    if (out.length === 0 && Number.isFinite(single) && single > 0) {
+      out = [Math.trunc(single)];
+    }
+    return [...new Set(out)];
   }
 
   // ------------------- AFTER STORE -------------------
   protected async afterStore(record: ExtendedBooking): Promise<ExtendedBooking> {
 
     const employeeId = Number((this as any)._employeeIdTemp);
-    const petId = Number((this as any)._petIdTemp);
     let schedule: any[] = [];
     const temp = (this as any)._scheduleTemp;
     if (typeof temp === "string") {
@@ -104,24 +157,38 @@ export default class AdminBookingController extends RestController<
       effectiveEmployeeId = adminFallback?.id ?? 0;
     }
 
-    const validPetId = Number.isFinite(petId) && petId > 0 ? petId : 0;
-    if (effectiveEmployeeId > 0 && validPetId > 0 && schedule.length > 0) {
+    const petIdsRequested = this.parsePetIdsFromStorePayload();
+    const ownedPets = await prisma.pet.findMany({
+      where: {
+        id: { in: petIdsRequested },
+        userId: record.userId,
+        deletedAt: null,
+      },
+      select: { id: true },
+    });
+    const validPetIds = ownedPets.map((p) => p.id);
+
+    if (effectiveEmployeeId > 0 && validPetIds.length > 0 && schedule.length > 0) {
       for (let i = 0; i < schedule.length; i++) {
         const item = schedule[i];
         const scheduleDate = item?.schedule_date;
         const scheduleTime = item?.schedule_time;
         if (!scheduleDate || scheduleTime == null) continue;
-        await prisma.bookingSchedule.create({
-          data: {
-            bookingId: record.id,
-            employeeId: effectiveEmployeeId,
-            petId: validPetId,
-            serviceCategoryId: record.serviceCategoryId,
-            serviceId: record.serviceId,
-            scheduleDate: new Date(`${scheduleDate}T00:00:00`),
-            scheduleTime: String(scheduleTime),
-          },
-        });
+        const dateVal = new Date(`${scheduleDate}T00:00:00`);
+        const timeVal = String(scheduleTime);
+        for (const pid of validPetIds) {
+          await prisma.bookingSchedule.create({
+            data: {
+              bookingId: record.id,
+              employeeId: effectiveEmployeeId,
+              petId: pid,
+              serviceCategoryId: record.serviceCategoryId,
+              serviceId: record.serviceId,
+              scheduleDate: dateVal,
+              scheduleTime: timeVal,
+            },
+          });
+        }
       }
     }
 
