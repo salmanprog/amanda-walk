@@ -185,16 +185,16 @@ export default function EditEmployeeBookingPage() {
 
   if (loadingBooking && !bookingData) {
     return (
-      <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800">
-        <p className="text-gray-500">Loading booking...</p>
+      <div className="overflow-hidden rounded-2xl border border-gray-200/90 bg-white p-6 shadow-sm ring-1 ring-black/[0.03] dark:border-gray-800 dark:bg-gray-900 dark:ring-white/[0.04]">
+        <p className="text-sm text-gray-500 dark:text-gray-400">Loading booking…</p>
       </div>
     );
   }
 
   if (!bookingData && !loadingBooking) {
     return (
-      <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800">
-        <p className="text-gray-500">Booking not found.</p>
+      <div className="overflow-hidden rounded-2xl border border-gray-200/90 bg-white p-6 shadow-sm ring-1 ring-black/[0.03] dark:border-gray-800 dark:bg-gray-900 dark:ring-white/[0.04]">
+        <p className="text-sm text-gray-500 dark:text-gray-400">Booking not found.</p>
         <Button
           className="mt-4"
           variant="secondary"
@@ -206,203 +206,223 @@ export default function EditEmployeeBookingPage() {
     );
   }
 
+  const detailLabelClass =
+    "text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400";
+  const detailValueClass =
+    "mt-1 text-sm font-medium text-gray-900 dark:text-gray-100";
+  const sectionCardClass =
+    "rounded-xl border border-gray-200/90 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-950/50 dark:shadow-none sm:p-6";
+  const sectionTitleClass =
+    "text-sm font-semibold text-gray-900 dark:text-white";
+
   return (
-    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white px-4 pb-3 pt-4 dark:border-gray-800 sm:px-6">
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
-            Edit Booking
-          </h3>
-          <p className="mt-1 text-sm text-gray-500">Booking #{bookingData?.id}</p>
+    <div className="overflow-hidden rounded-2xl border border-gray-200/90 bg-white shadow-sm ring-1 ring-black/[0.03] dark:border-gray-800 dark:bg-gray-900 dark:ring-white/[0.04]">
+      <div className="border-b border-gray-100 bg-gray-50/80 px-4 py-6 dark:border-gray-800 dark:bg-gray-950/60 sm:px-8">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0 space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+              Assigned booking
+            </p>
+            <h3 className="text-xl font-semibold tracking-tight text-gray-900 dark:text-white">
+              Booking #{bookingData?.id}
+            </h3>
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              {bookingData?.status ? (
+                <Badge size="sm" color={statusColor(String(bookingData.status))}>
+                  {String(bookingData.status)}
+                </Badge>
+              ) : null}
+              {bookingData?.categoryName || bookingData?.serviceName ? (
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  {[bookingData?.categoryName, bookingData?.serviceName]
+                    .filter(Boolean)
+                    .join(" · ") || null}
+                </span>
+              ) : null}
+            </div>
+          </div>
+          <div className="flex shrink-0 justify-end sm:pt-1">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                const bid = bookingData?.id ?? id;
+                window.location.assign(`/admin/chat?bookingId=${bid}`);
+              }}
+              className="!flex-none gap-1.5 !py-2 !px-3.5 text-xs inline-flex w-auto shrink-0 items-center"
+            >
+              <MessageCircle className="h-3.5 w-3.5" aria-hidden />
+              Chat
+            </Button>
+          </div>
         </div>
-        <Button
-          type="button"
-          variant="secondary"
-          onClick={() => router.push(`/admin/chat?bookingId=${bookingData?.id ?? ""}`)}
-          className="inline-flex items-center gap-2"
-        >
-          <MessageCircle className="h-4 w-4" aria-hidden />
-          Chat
-        </Button>
       </div>
 
-      <div className="mb-6 rounded-xl border border-gray-100 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-gray-800/30">
-        <h4 className="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">
-          Booking details
-        </h4>
-        <dl className="grid gap-2 text-sm sm:grid-cols-2">
-          <div>
-            <dt className="text-gray-500">User name</dt>
-            <dd className="font-medium text-gray-800 dark:text-white">
-              {bookingData?.userName ?? bookingData?.userId ?? "—"}
-            </dd>
+      <div className="space-y-6 px-4 py-6 sm:px-8 sm:py-8">
+        <section className={sectionCardClass} aria-labelledby="employee-booking-details-heading">
+          <div className="mb-5 border-b border-gray-100 pb-4 dark:border-gray-800">
+            <h4 id="employee-booking-details-heading" className={sectionTitleClass}>
+              Customer &amp; booking
+            </h4>
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              Contact and service summary for this assignment
+            </p>
           </div>
-          <div>
-            <dt className="text-gray-500">Email</dt>
-            <dd className="font-medium text-gray-800 dark:text-white">
-              {bookingData?.userEmail ?? "—"}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-gray-500">Phone</dt>
-            <dd className="font-medium text-gray-800 dark:text-white">
-              {bookingData?.userPhone ?? "—"}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-gray-500">Category / Service</dt>
-            <dd className="font-medium text-gray-800 dark:text-white">
-              {bookingData?.categoryName ?? "—"} / {bookingData?.serviceName ?? "—"}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-gray-500">Total</dt>
-            <dd className="font-medium text-gray-800 dark:text-white">
-              ${Number(bookingData?.totalPrice ?? 0).toFixed(2)}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-gray-500">Schedule</dt>
-            <dd className="font-medium text-gray-800 dark:text-white">
-            {bookingData?.scheduleSlot != null &&
-                    String(bookingData.scheduleSlot).trim() !== ""
-                      ? String(bookingData.scheduleSlot).trim()
-                      : (bookingData.scheduleTime ?? "—")}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-gray-500">Current status</dt>
-            <dd>
-              <Badge size="sm" color={statusColor(bookingData?.status ?? "PENDING")}>
-                {bookingData?.status ?? "PENDING"}
-              </Badge>
-            </dd>
-          </div>
-        </dl>
-      </div>
+          <dl className="grid gap-x-8 gap-y-5 text-sm sm:grid-cols-2">
+            <div>
+              <dt className={detailLabelClass}>User name</dt>
+              <dd className={detailValueClass}>
+                {bookingData?.userName ?? bookingData?.userId ?? "—"}
+              </dd>
+            </div>
+            <div>
+              <dt className={detailLabelClass}>Email</dt>
+              <dd className={detailValueClass}>{bookingData?.userEmail ?? "—"}</dd>
+            </div>
+            <div>
+              <dt className={detailLabelClass}>Phone</dt>
+              <dd className={detailValueClass}>{bookingData?.userPhone ?? "—"}</dd>
+            </div>
+            <div>
+              <dt className={detailLabelClass}>Category / Service</dt>
+              <dd className={detailValueClass}>
+                {bookingData?.categoryName ?? "—"} / {bookingData?.serviceName ?? "—"}
+              </dd>
+            </div>
+          </dl>
+        </section>
 
-      {/* Booking schedules table */}
-      <div className="mb-6 rounded-xl border border-gray-100 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-gray-800/30">
-        <h4 className="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">
-          Booking schedules
-        </h4>
-        <div className="max-w-full overflow-x-auto">
-          <Table>
-            <TableHeader className="border-gray-100 dark:border-gray-800 border-y">
-              <TableRow>
-                <TableCell
-                  isHeader
-                  className="py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
-                >
-                  Schedule date
-                </TableCell>
-                <TableCell
-                  isHeader
-                  className="py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
-                >
-                  Schedule time
-                </TableCell>
-                <TableCell
-                  isHeader
-                  className="py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
-                >
-                  Started
-                </TableCell>
-                <TableCell
-                  isHeader
-                  className="py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
-                >
-                  Completed
-                </TableCell>
-                <TableCell
-                  isHeader
-                  className="py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
-                >
-                  Action
-                </TableCell>
-              </TableRow>
-            </TableHeader>
-            <TableBody className="divide-y divide-gray-100 dark:divide-gray-800">
-              {(() => {
-                const schedules: ScheduleRow[] =
-                  localSchedules ??
-                  (Array.isArray((bookingData as { schedules?: ScheduleRow[] })?.schedules) &&
-                  (bookingData as { schedules?: ScheduleRow[] }).schedules!.length > 0
-                    ? (bookingData as { schedules: ScheduleRow[] }).schedules
-                    : bookingData?.scheduleDate != null || bookingData?.scheduleTime != null
-                      ? [
-                          {
-                            scheduleDate: bookingData?.scheduleDate ?? null,
-                            scheduleSlot: bookingData?.scheduleSlot ?? null,
-                            scheduleTime: bookingData?.scheduleTime ?? null,
-                            isStarted: bookingData?.isStarted ?? false,
-                            isCompleted: bookingData?.isCompleted ?? false,
-                          },
-                        ]
-                      : []);
-                return schedules.length > 0 ? (
-                  schedules.map((row: ScheduleRow, idx: number) => (
-                    <TableRow key={row.id ?? idx}>
-                      <TableCell className="py-3 text-gray-500 text-theme-sm dark:text-gray-400">
-                      {row.scheduleDate ? formatDateOnly(row.scheduleDate) : "—"}
-                      </TableCell>
-                      <TableCell className="py-3 text-gray-500 text-theme-sm dark:text-gray-400">
-                      {row.scheduleSlot != null &&
-                    String(row.scheduleSlot).trim() !== ""
-                      ? String(row.scheduleSlot).trim()
-                      : (row.scheduleTime ?? "—")}
-                      </TableCell>
-                      <TableCell className="py-3 text-gray-500 text-theme-sm dark:text-gray-400">
-                        {row.isStarted ? "Yes" : "No"}
-                      </TableCell>
-                      <TableCell className="py-3 text-gray-500 text-theme-sm dark:text-gray-400">
-                        {row.isCompleted ? "Yes" : "No"}
-                      </TableCell>
-                      <TableCell className="py-3 text-theme-sm dark:text-gray-400">
-                        {!!row.isStarted && !!row.isCompleted ? (
-                          <span className="text-green-600 dark:text-green-400 font-medium">Completed</span>
-                        ) : row.id != null ? !!row.isStarted ? (
-                          <Button
-                            type="button"
-                            variant="secondary"
-                            className="!py-1.5 !px-3 text-theme-xs"
-                            onClick={() => handleScheduleComplete(row, idx)}
-                            loading={scheduleUpdatingId === row.id}
-                            disabled={scheduleUpdatingId !== null}
-                          >
-                            Complete
-                          </Button>
-                        ) : (
-                          <Button
-                            type="button"
-                            variant="secondary"
-                            className="!py-1.5 !px-3 text-theme-xs"
-                            onClick={() => handleScheduleStart(row, idx)}
-                            loading={scheduleUpdatingId === row.id}
-                            disabled={scheduleUpdatingId !== null}
-                          >
-                            Start
-                          </Button>
-                        ) : (
-                          "—"
-                        )}
+        <section className={sectionCardClass} aria-labelledby="employee-booking-schedules-heading">
+          <div className="mb-5 border-b border-gray-100 pb-4 dark:border-gray-800">
+            <h4 id="employee-booking-schedules-heading" className={sectionTitleClass}>
+              Booking schedules
+            </h4>
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              Walk dates, times, and completion status
+            </p>
+          </div>
+          <div className="max-w-full overflow-x-auto">
+            <Table>
+              <TableHeader className="border-y border-gray-100 dark:border-gray-800">
+                <TableRow>
+                  <TableCell
+                    isHeader
+                    className="py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400"
+                  >
+                    Schedule date
+                  </TableCell>
+                  <TableCell
+                    isHeader
+                    className="py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400"
+                  >
+                    Schedule time
+                  </TableCell>
+                  <TableCell
+                    isHeader
+                    className="py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400"
+                  >
+                    Started
+                  </TableCell>
+                  <TableCell
+                    isHeader
+                    className="py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400"
+                  >
+                    Completed
+                  </TableCell>
+                  <TableCell
+                    isHeader
+                    className="py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400"
+                  >
+                    Action
+                  </TableCell>
+                </TableRow>
+              </TableHeader>
+              <TableBody className="divide-y divide-gray-100 dark:divide-gray-800">
+                {(() => {
+                  const schedules: ScheduleRow[] =
+                    localSchedules ??
+                    (Array.isArray((bookingData as { schedules?: ScheduleRow[] })?.schedules) &&
+                    (bookingData as { schedules?: ScheduleRow[] }).schedules!.length > 0
+                      ? (bookingData as { schedules: ScheduleRow[] }).schedules
+                      : bookingData?.scheduleDate != null || bookingData?.scheduleTime != null
+                        ? [
+                            {
+                              scheduleDate: bookingData?.scheduleDate ?? null,
+                              scheduleSlot: bookingData?.scheduleSlot ?? null,
+                              scheduleTime: bookingData?.scheduleTime ?? null,
+                              isStarted: bookingData?.isStarted ?? false,
+                              isCompleted: bookingData?.isCompleted ?? false,
+                            },
+                          ]
+                        : []);
+                  return schedules.length > 0 ? (
+                    schedules.map((row: ScheduleRow, idx: number) => (
+                      <TableRow key={row.id ?? idx}>
+                        <TableCell className="py-3 text-theme-sm text-gray-500 dark:text-gray-400">
+                          {row.scheduleDate ? formatDateOnly(row.scheduleDate) : "—"}
+                        </TableCell>
+                        <TableCell className="py-3 text-theme-sm text-gray-500 dark:text-gray-400">
+                          {row.scheduleSlot != null && String(row.scheduleSlot).trim() !== ""
+                            ? String(row.scheduleSlot).trim()
+                            : (row.scheduleTime ?? "—")}
+                        </TableCell>
+                        <TableCell className="py-3 text-theme-sm text-gray-500 dark:text-gray-400">
+                          {row.isStarted ? "Yes" : "No"}
+                        </TableCell>
+                        <TableCell className="py-3 text-theme-sm text-gray-500 dark:text-gray-400">
+                          {row.isCompleted ? "Yes" : "No"}
+                        </TableCell>
+                        <TableCell className="py-3 text-theme-sm dark:text-gray-400">
+                          {!!row.isStarted && !!row.isCompleted ? (
+                            <span className="font-medium text-green-600 dark:text-green-400">
+                              Completed
+                            </span>
+                          ) : row.id != null ? (
+                            !!row.isStarted ? (
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                className="!px-3 !py-1.5 text-theme-xs"
+                                onClick={() => handleScheduleComplete(row, idx)}
+                                loading={scheduleUpdatingId === row.id}
+                                disabled={scheduleUpdatingId !== null}
+                              >
+                                Complete
+                              </Button>
+                            ) : (
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                className="!px-3 !py-1.5 text-theme-xs"
+                                onClick={() => handleScheduleStart(row, idx)}
+                                loading={scheduleUpdatingId === row.id}
+                                disabled={scheduleUpdatingId !== null}
+                              >
+                                Start
+                              </Button>
+                            )
+                          ) : (
+                            "—"
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell
+                        colSpan={5}
+                        className="py-6 text-center text-theme-sm text-gray-500 dark:text-gray-400"
+                      >
+                        No schedule entries.
                       </TableCell>
                     </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell
-                      colSpan={5}
-                      className="py-6 text-center text-gray-500 text-theme-sm dark:text-gray-400"
-                    >
-                      No schedule entries.
-                    </TableCell>
-                  </TableRow>
-                );
-              })()}
-            </TableBody>
-          </Table>
-        </div>
+                  );
+                })()}
+              </TableBody>
+            </Table>
+          </div>
+        </section>
       </div>
     </div>
   );

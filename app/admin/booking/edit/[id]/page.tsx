@@ -572,7 +572,10 @@ export default function EditBookingStatus() {
               type="button"
               variant="secondary"
               size="sm"
-              onClick={() => router.push(`/admin/chat?bookingId=${bookingData?.id ?? id}`)}
+              onClick={() => {
+                const bid = bookingData?.id ?? id;
+                window.location.assign(`/admin/chat?bookingId=${bid}`);
+              }}
               className="!flex-none gap-1.5 !py-2 !px-3.5 text-xs inline-flex w-auto shrink-0 items-center"
             >
               <MessageCircle className="h-3.5 w-3.5" aria-hidden />

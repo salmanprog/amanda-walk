@@ -1,7 +1,41 @@
 export const runtime = "nodejs";
 import { NextResponse } from "next/server";
+import { promises as fs } from "fs";
+import path from "path";
 import { prisma } from "@/lib/prisma";
 import { verifyToken } from "@/utils/jwt";
+
+const CHAT_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
+const CHAT_IMG_PREFIX = "[img]";
+const CHAT_IMG_SUFFIX = "[/img]";
+
+function parseDataUrlImage(dataUrl: string): { buffer: Buffer; ext: string } | null {
+  const trimmed = dataUrl.trim();
+  const m = trimmed.match(/^data:(image\/[\w+.+-]+);base64,([\s\S]+)$/i);
+  if (!m) return null;
+  const mime = m[1].toLowerCase();
+  if (!mime.startsWith("image/")) return null;
+  try {
+    const buffer = Buffer.from(m[2], "base64");
+    let ext = "jpg";
+    if (mime.includes("png")) ext = "png";
+    else if (mime.includes("gif")) ext = "gif";
+    else if (mime.includes("webp")) ext = "webp";
+    else if (mime.includes("jpeg") || mime.includes("jpg")) ext = "jpg";
+    return { buffer, ext };
+  } catch {
+    return null;
+  }
+}
+
+async function saveChatImageBuffer(buffer: Buffer, ext: string): Promise<string> {
+  const uploadDir = path.join(process.cwd(), "public", "uploads", "chat");
+  await fs.mkdir(uploadDir, { recursive: true });
+  const safeExt = ext.replace(/[^a-z0-9]/gi, "").slice(0, 4) || "jpg";
+  const fileName = `${Date.now()}-upload.${safeExt}`;
+  await fs.writeFile(path.join(uploadDir, fileName), buffer);
+  return `/uploads/chat/${fileName}`;
+}
 
 interface DecodedToken {
   id: string;
@@ -106,7 +140,7 @@ export async function POST(req: Request) {
     );
   }
 
-  let body: { bookingId?: number; message?: string };
+  let body: { bookingId?: number; message?: string; imageDataUrl?: string };
   try {
     body = await req.json();
   } catch {
@@ -118,17 +152,40 @@ export async function POST(req: Request) {
 
   const bookingId = body.bookingId != null ? Number(body.bookingId) : NaN;
   const messageText = typeof body.message === "string" ? body.message.trim() : "";
+  const imageDataUrl =
+    typeof body.imageDataUrl === "string" ? body.imageDataUrl.trim() : "";
   if (!Number.isInteger(bookingId) || bookingId < 1) {
     return NextResponse.json(
       { code: 400, message: "Invalid or missing bookingId" },
       { status: 400 }
     );
   }
-  if (!messageText) {
+  if (!messageText && !imageDataUrl) {
     return NextResponse.json(
-      { code: 400, message: "Message is required" },
+      { code: 400, message: "Message or image is required" },
       { status: 400 }
     );
+  }
+
+  let messageToStore = messageText;
+  if (imageDataUrl) {
+    const parsed = parseDataUrlImage(imageDataUrl);
+    if (!parsed) {
+      return NextResponse.json(
+        { code: 400, message: "Invalid image data (expected base64 data URL)" },
+        { status: 400 }
+      );
+    }
+    if (parsed.buffer.length > CHAT_IMAGE_MAX_BYTES) {
+      return NextResponse.json(
+        { code: 400, message: "Image must be 5MB or smaller" },
+        { status: 400 }
+      );
+    }
+    const publicPath = await saveChatImageBuffer(parsed.buffer, parsed.ext);
+    messageToStore = messageText
+      ? `${CHAT_IMG_PREFIX}${publicPath}${CHAT_IMG_SUFFIX}\n${messageText}`
+      : `${CHAT_IMG_PREFIX}${publicPath}${CHAT_IMG_SUFFIX}`;
   }
 
   try {
@@ -150,7 +207,12 @@ export async function POST(req: Request) {
         ? (booking.assignedTo ?? null) // customer sends → employee receives
         : booking.userId; // employee sends → customer receives
     const created = await prisma.bookingChatMessage.create({
-      data: { bookingId, senderId, receiverId: receiverId != null && receiverId > 0 ? receiverId : null, message: messageText },
+      data: {
+        bookingId,
+        senderId,
+        receiverId: receiverId != null && receiverId > 0 ? receiverId : null,
+        message: messageToStore,
+      },
       include: {
         sender: {
           select: { id: true, name: true, lname: true },

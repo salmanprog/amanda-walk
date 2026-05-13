@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Send } from "lucide-react";
+import { ArrowLeft, ImagePlus, Send, X } from "lucide-react";
 import Button from "@/components/ui/button/Button";
 import AvatarText from "@/components/ui/avatar/AvatarText";
 import useApi from "@/utils/useApi";
@@ -29,6 +29,22 @@ interface ChatData {
   messages: ChatMessage[];
 }
 
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => resolve(String(fr.result));
+    fr.onerror = () => reject(fr.error);
+    fr.readAsDataURL(file);
+  });
+}
+
+/** Matches server format `[img]/uploads/...[/img]` + optional caption */
+function parseEmbeddedChatImage(raw: string): { src: string | null; caption: string } {
+  const m = raw.match(/^\[img\]([^\[]+)\[\/img\]\n?([\s\S]*)$/);
+  if (m) return { src: m[1].trim(), caption: (m[2] ?? "").trim() };
+  return { src: null, caption: raw };
+}
+
 function ChatPageContent() {
   const searchParams = useSearchParams();
   const bookingId = searchParams.get("bookingId") ?? "";
@@ -38,6 +54,9 @@ function ChatPageContent() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [currentUserId, setCurrentUserId] = useState<number>(0);
   const [inputMessage, setInputMessage] = useState("");
+  const [pendingImage, setPendingImage] = useState<File | null>(null);
+  const [pendingPreviewUrl, setPendingPreviewUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const lastMessageCountRef = useRef(0);
@@ -62,7 +81,7 @@ function ChatPageContent() {
     requiresAuth: true,
   });
 
-  const { sendData: postMessage, loading: sending } = useApi({
+  const { sendData: postMessage, loading: sending, error: sendError } = useApi({
     url: "/api/admin/chat",
     method: "POST",
     type: "manual",
@@ -113,18 +132,75 @@ function ChatPageContent() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [displayMessages.length]);
 
+  useEffect(() => {
+    if (!pendingImage) {
+      setPendingPreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(pendingImage);
+    setPendingPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [pendingImage]);
+
+  const clearPendingImage = () => {
+    setPendingImage(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handlePickImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      e.target.value = "";
+      return;
+    }
+    setPendingImage(file);
+  };
+
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     const text = inputMessage.trim();
-    if (!text || !isValidBooking || sending) return;
+    const imageToSend = pendingImage;
+    if ((!text && !imageToSend) || !isValidBooking || sending) return;
+    const prevInput = inputMessage;
     setInputMessage("");
     try {
-      const res = await postMessage({ bookingId: bookingIdNum, message: text });
+      let res: { code?: number; data?: unknown; message?: string };
+      if (imageToSend) {
+        const imageDataUrl = await fileToDataUrl(imageToSend);
+        res = (await postMessage({
+          bookingId: bookingIdNum,
+          message: text,
+          imageDataUrl,
+        })) as { code?: number; data?: unknown; message?: string };
+      } else {
+        res = (await postMessage({ bookingId: bookingIdNum, message: text })) as {
+          code?: number;
+          data?: unknown;
+          message?: string;
+        };
+      }
       if (res?.code === 200 && res?.data) {
         setMessages((prev) => [...prev, res.data as ChatMessage]);
+        clearPendingImage();
+      } else {
+        setInputMessage(prevInput);
+        if (imageToSend) {
+          setPendingImage(imageToSend);
+          if (fileInputRef.current) {
+            try {
+              const dt = new DataTransfer();
+              dt.items.add(imageToSend);
+              fileInputRef.current.files = dt.files;
+            } catch {
+              /* ignore */
+            }
+          }
+        }
       }
     } catch {
-      setInputMessage(text);
+      setInputMessage(prevInput);
+      if (imageToSend) setPendingImage(imageToSend);
     }
   };
 
@@ -206,7 +282,27 @@ function ChatPageContent() {
                           : "bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-gray-100 rounded-bl-md"
                       }`}
                     >
-                      <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">{String(m.message ?? "")}</p>
+                      {(() => {
+                        const raw = String(m.message ?? "");
+                        const { src, caption } = parseEmbeddedChatImage(raw);
+                        return (
+                          <>
+                            {src ? (
+                              // eslint-disable-next-line @next/next/no-img-element -- dynamic chat uploads from same origin
+                              <img
+                                src={src}
+                                alt=""
+                                className="mb-2 max-h-48 max-w-full rounded-lg object-contain"
+                              />
+                            ) : null}
+                            {(caption || !src) && (
+                              <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">
+                                {src ? caption : raw}
+                              </p>
+                            )}
+                          </>
+                        );
+                      })()}
                     </div>
                   </div>
                 </li>
@@ -231,26 +327,70 @@ function ChatPageContent() {
       </div>
       <form
         onSubmit={handleSend}
-        className="flex shrink-0 gap-2 border-t border-gray-200 bg-gray-50/80 p-3 dark:border-gray-700 dark:bg-gray-800/50"
+        className="flex shrink-0 flex-col gap-2 border-t border-gray-200 bg-gray-50/80 p-3 dark:border-gray-700 dark:bg-gray-800/50"
       >
-        <input
-          type="text"
-          value={inputMessage}
-          onChange={(e) => setInputMessage(e.target.value)}
-          placeholder="Type a message…"
-          className="flex-1 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder-gray-500 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400"
-          disabled={sending || !isValidBooking}
-        />
-        <Button
-          type="submit"
-          variant="primary"
-          disabled={!inputMessage.trim() || sending || !isValidBooking}
-          loading={sending}
-          className="inline-flex items-center gap-2"
-        >
-          <Send className="h-4 w-4" aria-hidden />
-          Send 
-        </Button>
+        {pendingPreviewUrl && (
+          <div className="relative inline-flex w-fit">
+            {/* eslint-disable-next-line @next/next/no-img-element -- local object URL preview */}
+            <img
+              src={pendingPreviewUrl}
+              alt="Attachment preview"
+              className="h-16 w-16 rounded-lg border border-gray-200 object-cover dark:border-gray-600"
+            />
+            <button
+              type="button"
+              onClick={clearPendingImage}
+              className="absolute -right-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 shadow-sm hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+              aria-label="Remove attachment"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        )}
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={inputMessage}
+            onChange={(e) => setInputMessage(e.target.value)}
+            placeholder="Type a message…"
+            className="flex-1 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder-gray-500 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400"
+            disabled={sending || !isValidBooking}
+          />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="sr-only"
+            tabIndex={-1}
+            onChange={handlePickImage}
+            aria-hidden
+          />
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={sending || !isValidBooking}
+            className="inline-flex shrink-0 items-center justify-center px-3"
+            aria-label="Attach image"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <ImagePlus className="h-5 w-5" aria-hidden />
+          </Button>
+          <Button
+            type="submit"
+            variant="primary"
+            disabled={(!inputMessage.trim() && !pendingImage) || sending || !isValidBooking}
+            loading={sending}
+            className="inline-flex items-center gap-2"
+          >
+            <Send className="h-4 w-4" aria-hidden />
+            Send
+          </Button>
+        </div>
+        {sendError ? (
+          <p className="text-xs text-red-600 dark:text-red-400" role="alert">
+            {sendError}
+          </p>
+        ) : null}
       </form>
     </div>
   );
