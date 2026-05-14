@@ -271,7 +271,7 @@ function AdminChatPageContent() {
             {bookingLabel} – {userName}
           </h1>
           <p className="truncate text-xs text-gray-500 dark:text-gray-400">
-            One-to-one chat for this booking
+            chat for this booking
           </p>
         </div>
       </header>
@@ -287,7 +287,7 @@ function AdminChatPageContent() {
         ) : displayMessages.length === 0 ? (
           <p className="text-center text-sm text-gray-500 dark:text-gray-400">No messages yet. Start the conversation.</p>
         ) : (
-          <ul className="space-y-3 w-full max-w-2xl mx-auto">
+          <ul className="space-y-3 w-full mx-auto">
             {displayMessages.map((m, idx) => {
               const isRight = messageOnRight(m.senderId);
               const senderName = (m.sender && typeof m.sender === "object" ? m.sender.name : null) ?? "—";

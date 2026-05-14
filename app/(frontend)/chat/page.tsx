@@ -235,12 +235,12 @@ function ChatPageContent() {
             {bookingLabel} — Chat with employee
           </h1>
           <p className="truncate text-xs text-gray-500 dark:text-gray-400">
-            One-to-one chat for this booking
+            chat for this booking
           </p>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 flex flex-col items-center">
+      <div className="flex-1 overflow-y-auto p-4 flex flex-col items-center chat-wrapper">
         {chatError ? (
           <p className="text-center text-sm text-red-600 dark:text-red-400">{chatError}</p>
         ) : loadingChat && !hasLoadedOnce ? (
@@ -250,7 +250,7 @@ function ChatPageContent() {
         ) : displayMessages.length === 0 ? (
           <p className="text-center text-sm text-gray-500 dark:text-gray-400">No messages yet. Start the conversation.</p>
         ) : (
-          <ul className="space-y-4 w-full max-w-2xl mx-auto">
+          <ul className="space-y-4 w-full mx-auto">
             {displayMessages.map((m, idx) => {
               const isMe = m.senderId === displayUserId;
               const senderName = (m.sender && typeof m.sender === "object" ? (m.sender as ChatUser).name : null) ?? "—";
@@ -353,7 +353,7 @@ function ChatPageContent() {
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
             placeholder="Type a message…"
-            className="flex-1 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder-gray-500 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400"
+            className="flex-1 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder-gray-500 focus:border-[var(--primary-theme)] focus:outline-none focus:ring-1 focus:ring-[var(--primary-theme)] dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400"
             disabled={sending || !isValidBooking}
           />
           <input
