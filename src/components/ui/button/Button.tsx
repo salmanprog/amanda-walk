@@ -32,17 +32,17 @@ const Button: FC<ButtonProps> = ({
   // Variant Classes
   const variantClasses = {
     primary:
-      "bg-brand-500 text-white shadow-theme-xs hover:bg-brand-600 disabled:bg-brand-300",
+      "bg-[var(--primary-theme)] text-white shadow-theme-xs hover:bg-[#5b7cba] disabled:bg-brand-300",
     outline:
       "bg-white text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-400 dark:ring-gray-700 dark:hover:bg-white/[0.03] dark:hover:text-gray-300",
     secondary: 
-    "flex-1 bg-[var(--primary-theme)] text-white py-4 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2",
+    "flex-1 bg-[var(--primary-theme)] hover:bg-[#5b7cba] text-white py-4 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2",
   };
 
   return (
     <button
       type={type} // ✅ Supported
-      className={`inline-flex items-center justify-center font-medium gap-2 rounded-lg transition
+      className={`inline-flex items-center max-w-fit justify-center font-medium gap-2 rounded-lg transition
         ${sizeClasses[size]} ${variantClasses[variant]}
         ${disabled || loading ? "cursor-not-allowed opacity-50" : ""}
         ${className}`}

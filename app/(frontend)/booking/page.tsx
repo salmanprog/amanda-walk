@@ -130,6 +130,32 @@ export default function BookingListPage() {
     setMounted(true);
   }, []);
 
+  useEffect(() => {
+    const body = document.body;
+    const html = document.documentElement;
+  
+    if (viewBookingDetails) {
+      const scrollbarWidth = window.innerWidth - html.clientWidth;
+  
+      body.style.overflow = "hidden";
+      html.style.overflow = "hidden";
+  
+      if (scrollbarWidth > 0) {
+        body.style.paddingRight = `${scrollbarWidth}px`;
+      }
+    } else {
+      body.style.overflow = "";
+      body.style.paddingRight = "";
+      html.style.overflow = "";
+    }
+  
+    return () => {
+      body.style.overflow = "";
+      body.style.paddingRight = "";
+      html.style.overflow = "";
+    };
+  }, [viewBookingDetails]);
+
   const bookingDetailsContactEmail = useMemo(() => {
     if (!viewBookingDetails) return "";
     const raw = viewBookingDetails.userEmail;
@@ -336,7 +362,7 @@ export default function BookingListPage() {
             onClick={() => setViewBookingDetails(null)}
           >
             <div
-              className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-2xl w-full shrink-0 p-6 border border-gray-200 dark:border-gray-700"
+              className="bg-white relative dark:bg-gray-800 rounded-2xl shadow-xl max-w-2xl w-full shrink-0 p-6 border border-gray-200 dark:border-gray-700"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex justify-between items-center mb-4">
@@ -363,7 +389,7 @@ export default function BookingListPage() {
                   <button
                     type="button"
                     onClick={() => setViewBookingDetails(null)}
-                    className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 text-2xl leading-none"
+                    className="absolute top-[-10px] right-[-10px]  bg-[var(--primary-theme)] w-[30px] h-[30px] text-white hover:bg-[#5b7cba] rounded-full text-2xl leading-none"
                   >
                     &times;
                   </button>
@@ -507,11 +533,11 @@ export default function BookingListPage() {
                   </dd>
                 </div>
               </dl>
-              <div className="mt-6">
+              {/* <div className="mt-6">
                 <Button type="button" variant="secondary" onClick={() => setViewBookingDetails(null)}>
                   Close
                 </Button>
-              </div>
+              </div> */}
             </div>
           </div>
         </div>,

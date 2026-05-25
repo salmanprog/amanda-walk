@@ -1360,7 +1360,28 @@ li {
 .logout-btn:hover {
   box-shadow: none !important;
 }
-
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--primary-theme);
+  border-radius: 5px;
+}
+::-webkit-scrollbar-track {
+  background: #f0f0f0;
+  border-radius: 5px;
+}
+.chat-wrapper::-webkit-scrollbar {
+  width: 5px;
+}
+.chat-wrapper::-webkit-scrollbar-thumb {
+  background: var(--primary-theme);
+  border-radius: 5px;
+}
+.chat-wrapper::-webkit-scrollbar-track {
+  background: #f0f0f0;
+  border-radius: 5px;
+}
 
 /* responsive */
 

@@ -39,7 +39,7 @@ export default function Tabs() {
               href={tab.href}
               className="group border border-gray-200 rounded-2xl  flex flex-col items-center justify-center bg-white hover:border-indigo-600 shadow-2xl p-6  transition-all"
             >
-              <Icon className="w-8 h-8 text-indigo-600 mb-3 group-hover:scale-110 transition-transform" />
+              <Icon className="w-8 h-8 text-[var(--primary-theme)] mb-3 group-hover:scale-110 transition-transform" />
               <span className="text-sm font-semibold text-gray-600">
                 {tab.name}
               </span>
