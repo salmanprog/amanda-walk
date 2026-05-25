@@ -1,5 +1,6 @@
 // src/middleware/proxy.ts
 import { jwtMiddleware } from "./src/middleware/jwtMiddleware";
+import { getMaliciousPathBlockReason } from "./src/lib/security/maliciousPathGuard";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
@@ -28,6 +29,11 @@ const protectedApiRoutes = [
 
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
+  const blockReason = getMaliciousPathBlockReason(pathname);
+  if (blockReason) {
+    return new NextResponse(null, { status: 404 });
+  }
+
   const method = req.method;
   const adminToken = req.cookies.get("token")?.value;
 

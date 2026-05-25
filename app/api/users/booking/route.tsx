@@ -6,6 +6,7 @@ import { promises as fs } from "fs";
 import path from "path";
 import { verifyToken } from "@/utils/jwt";
 import { prisma } from "@/lib/prisma";
+import { isAllowedUploadFilename } from "@/lib/security/maliciousPathGuard";
 
 interface DecodedToken {
   id: string;
@@ -29,9 +30,14 @@ export async function POST(request: Request) {
           (data as Record<string, any>)[key] = value;
         } else if (value instanceof Blob && key === "image") {
           const file = value as File;
-                    
+          const fileName = `${Date.now()}-${file.name || "upload.jpg"}`;
+          if (!isAllowedUploadFilename(fileName)) {
+            return NextResponse.json(
+              { code: 400, message: "Invalid upload file type" },
+              { status: 400 }
+            );
+          }
           const buffer = Buffer.from(await file.arrayBuffer());
-          const fileName = `${Date.now()}-${file.name || "upload"}`;
           const filePath = path.join(uploadDir, fileName);
           await fs.writeFile(filePath, buffer);
           (data as Record<string, any>).imageUrl = `/uploads/${folderName}/${fileName}`;
