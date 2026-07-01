@@ -126,6 +126,9 @@ model User {
   platformId        String?
   emailOtp          String?     @db.VarChar(100)
   emailOtpCreatedAt DateTime?
+  totalTransaction  Decimal     @default(0.00) @map("total_transaction") @db.Decimal(10, 2)
+  payTransaction    Decimal     @default(0.00) @map("pay_transaction") @db.Decimal(10, 2)
+  remainingTransaction Decimal    @default(0.00) @map("remaining_transaction") @db.Decimal(10, 2)
   createdAt         DateTime?   @db.Timestamp(6)
   updatedAt         DateTime?   @db.Timestamp(6)
   deletedAt         DateTime?   @db.Timestamp(6)
@@ -144,6 +147,9 @@ model User {
   pets Pet[]
   bookingChatMessagesSent     BookingChatMessage[] @relation("BookingChatMessageSender")
   bookingChatMessagesReceived BookingChatMessage[] @relation("BookingChatMessageReceiver")
+  transactions                Transaction[]
+  employeeTransactions        Transaction[] @relation("EmployeeTransactions")
+  invoices                    Invoice[]
 
   @@index([name])
 }
@@ -332,6 +338,7 @@ model Booking {
   service      Services          @relation(fields: [serviceId], references: [id], onDelete: Cascade)
   schedules    BookingSchedule[]
   chatMessages BookingChatMessage[]
+  transactions Transaction[]
 
   @@index([userId])
   @@index([assignedTo])
@@ -339,6 +346,47 @@ model Booking {
   @@index([serviceId])
   @@index([status])
   @@map("bookings")
+}
+
+model Transaction {
+  id                Int               @id @default(autoincrement())
+  userId            Int               @map("user_id")
+  employeeId        Int               @map("employee_id")
+  bookingId         Int               @map("booking_id")
+  bookingScheduleId Int?              @unique @map("booking_schedule_id")
+  bookingAmount     Decimal           @map("booking_amount") @db.Decimal(10, 2)
+  status            TransactionStatus @default(PENDING)
+  createdAt         DateTime          @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt         DateTime          @updatedAt @map("updated_at") @db.DateTime(3)
+
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  employee        User             @relation("EmployeeTransactions", fields: [employeeId], references: [id], onDelete: Cascade)
+  booking         Booking          @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  bookingSchedule BookingSchedule? @relation(fields: [bookingScheduleId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([employeeId])
+  @@index([bookingId])
+  @@map("transaction")
+}
+
+model Invoice {
+  id          Int      @id @default(autoincrement())
+  userId        Int      @map("user_id")
+  invoiceAmount Decimal  @default(0.00) @map("invoice_amount") @db.Decimal(10, 2)
+  invoiceDate   DateTime @map("invoice_date") @db.Date
+  isPaid      Boolean  @default(false) @map("is_paid")
+  userPaid    Int      @default(0) @map("user_paid")
+  comments    String?  @db.Text
+  attachments String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.DateTime(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isPaid])
+  @@map("invoices")
 }
 
 model BookingSchedule {
@@ -365,6 +413,7 @@ model BookingSchedule {
   pet      Pet     @relation(fields: [petId], references: [id], onDelete: Cascade)
   category     ServiceCategory   @relation(fields: [serviceCategoryId], references: [id], onDelete: Cascade)
   service      Services          @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  transaction  Transaction?
 
   @@index([bookingId])
   @@index([employeeId])
@@ -468,6 +517,12 @@ enum ProfileType {
 enum BookingStatus {
   PENDING
   CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+enum TransactionStatus {
+  PENDING
   COMPLETED
   CANCELLED
 }

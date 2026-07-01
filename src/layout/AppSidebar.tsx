@@ -45,6 +45,9 @@ const iconMap: Record<string, React.ElementType> = {
   LayoutDashboard,
   Boxes,
   UserCircle,
+  DollarSign,
+  Calendar,
+  CreditCard,
 };
 const navItems: NavItem[] = [
   {

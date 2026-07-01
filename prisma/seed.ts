@@ -510,6 +510,21 @@ async function main() {
     parentId: generateSignupLinksModule.id,
     sortOrder: 1,
   });
+
+  const transactionsModule = await findOrCreateModule({
+    name: "Transactions",
+    routeName: "/admin/transaction/",
+    icon: "DollarSign",
+    sortOrder: sortOrder++,
+  });
+
+  const invoicesModule = await findOrCreateModule({
+    name: "Invoices",
+    routeName: "/admin/invoices/",
+    icon: "CreditCard",
+    sortOrder: sortOrder++,
+  });
+
   // Collect all modules for permission creation
   const superAdminModules = [
     dashboardModule,
@@ -526,6 +541,8 @@ async function main() {
     allScheduleSlotsModule,
     generateSignupLinksModule,
     allGenerateSignupLinksModule,
+    transactionsModule,
+    invoicesModule,
   ];
   
   const adminModules = [
@@ -543,6 +560,8 @@ async function main() {
     allScheduleSlotsModule,
     generateSignupLinksModule,
     allGenerateSignupLinksModule,
+    transactionsModule,
+    invoicesModule,
   ];
   
   const clientModules = [

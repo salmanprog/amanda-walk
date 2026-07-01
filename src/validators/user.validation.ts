@@ -227,3 +227,28 @@ export const updatePet = yup.object({
   weight: yup.string().required("Weight is required"),
   color: yup.string().required("Color is required"),
 });
+
+export const storeTransaction = yup.object({
+  userId: yup.number().required("User is required").positive(),
+  employeeId: yup.number().required("Employee is required").positive(),
+  bookingId: yup.number().required("Booking is required").positive(),
+  bookingAmount: yup.mixed().required("Booking amount is required"),
+  status: yup.string().optional(),
+});
+
+export const storeInvoice = yup.object({
+  userId: yup.number().required("User is required").positive(),
+  invoiceAmount: yup
+    .number()
+    .required("Invoice amount is required")
+    .positive("Invoice amount must be greater than zero"),
+});
+
+export const updateUserInvoice = yup.object({
+  comments: yup.string().trim().required("Message is required"),
+  attachments: yup.string().trim().required("Image is required"),
+});
+
+export const updateAdminInvoice = yup.object({
+  isPaid: yup.boolean().required("Admin payment status is required"),
+});

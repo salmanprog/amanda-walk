@@ -167,6 +167,8 @@ export default function EditEmployeeBookingPage() {
             i === idx ? { ...s, ...payload } : s
           )
         );
+      } else if (json.code !== 200) {
+        setErrorMsg(json.message || "Failed to update schedule.");
       }
     } finally {
       setScheduleUpdatingId(null);

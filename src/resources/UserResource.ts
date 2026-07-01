@@ -25,6 +25,12 @@ export default class UserResource extends BaseResource<ExtendedUser> {
       state: user.state,
       postalCode: user.postalCode,
       country: user.country,
+      totalTransaction: user.totalTransaction,
+      payTransaction: user.payTransaction,
+      remainingTransaction: user.remainingTransaction,
+      total_transaction: user.totalTransaction,
+      pay_transaction: user.payTransaction,
+      remaining_transaction: user.remainingTransaction,
       imageUrl: user.imageUrl
         ? `${process.env.NEXT_PUBLIC_APP_URL || ""}${user.imageUrl}`
         : null,

@@ -1,7 +1,7 @@
 export const runtime = "nodejs";
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { getUserByToken } from "@/utils/token";
+import AdminBookingScheduleController from "@/controllers/AdminBookingScheduleController";
 
 export async function PATCH(
   request: Request,
@@ -55,15 +55,22 @@ export async function PATCH(
       );
     }
 
-    const updated = await prisma.bookingSchedule.update({
-      where: { id: scheduleId },
-      data,
+    const headers = new Headers(request.headers);
+    headers.set(
+      "x-current-user",
+      JSON.stringify({
+        id: String(user.id),
+        userGroupId: user.userGroupId ?? null,
+        userType: user.userType,
+      })
+    );
+    const reqWithUser = new Request(request.url, {
+      method: request.method,
+      headers,
     });
 
-    return NextResponse.json(
-      { code: 200, message: "Schedule updated successfully", data: updated },
-      { status: 200 }
-    );
+    const controller = new AdminBookingScheduleController(reqWithUser, data);
+    return await controller.update(scheduleId, data);
   } catch (error: unknown) {
     return NextResponse.json(
       { code: 500, message: "Internal Server Error", error: (error as Error).message },

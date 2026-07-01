@@ -106,6 +106,7 @@ CREATE TABLE `User` (
     `platformId` VARCHAR(191) NULL,
     `emailOtp` VARCHAR(100) NULL,
     `emailOtpCreatedAt` DATETIME(3) NULL,
+    `total_transaction` DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
     `createdAt` TIMESTAMP(6) NULL,
     `updatedAt` TIMESTAMP(6) NULL,
     `deletedAt` TIMESTAMP(6) NULL,
@@ -291,6 +292,25 @@ CREATE TABLE `bookings` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
+CREATE TABLE `transaction` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `user_id` INTEGER NOT NULL,
+    `employee_id` INTEGER NOT NULL,
+    `booking_id` INTEGER NOT NULL,
+    `booking_schedule_id` INTEGER NULL,
+    `booking_amount` DECIMAL(10, 2) NOT NULL,
+    `status` ENUM('PENDING', 'COMPLETED', 'CANCELLED') NOT NULL DEFAULT 'PENDING',
+    `created_at` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    `updated_at` DATETIME(3) NOT NULL,
+
+    UNIQUE INDEX `transaction_booking_schedule_id_key`(`booking_schedule_id`),
+    INDEX `transaction_user_id_idx`(`user_id`),
+    INDEX `transaction_employee_id_idx`(`employee_id`),
+    INDEX `transaction_booking_id_idx`(`booking_id`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
 CREATE TABLE `booking_schedules` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `bookingId` INTEGER NOT NULL,
@@ -407,6 +427,18 @@ ALTER TABLE `bookings` ADD CONSTRAINT `bookings_serviceCategoryId_fkey` FOREIGN 
 
 -- AddForeignKey
 ALTER TABLE `bookings` ADD CONSTRAINT `bookings_serviceId_fkey` FOREIGN KEY (`serviceId`) REFERENCES `services`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `transaction` ADD CONSTRAINT `transaction_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `User`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `transaction` ADD CONSTRAINT `transaction_employee_id_fkey` FOREIGN KEY (`employee_id`) REFERENCES `User`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `transaction` ADD CONSTRAINT `transaction_booking_id_fkey` FOREIGN KEY (`booking_id`) REFERENCES `bookings`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `transaction` ADD CONSTRAINT `transaction_booking_schedule_id_fkey` FOREIGN KEY (`booking_schedule_id`) REFERENCES `booking_schedules`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `booking_schedules` ADD CONSTRAINT `booking_schedules_bookingId_fkey` FOREIGN KEY (`bookingId`) REFERENCES `bookings`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
