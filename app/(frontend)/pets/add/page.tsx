@@ -7,7 +7,6 @@ import toast from "react-hot-toast";
 import Link from "next/link";
 import { motion, AnimatePresence } from 'framer-motion';
 import Select from "@/components/form/Select";
-import DatePicker from "react-datepicker";
 import { PawPrint, Edit, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import useApi, { ApiResponse } from "@/utils/useApi";
@@ -34,9 +33,43 @@ interface PetFromApi {
     petTypeId?: number;
 }
 
+const formatDobInput = (value: string) => {
+    const digits = value.replace(/\D/g, "").slice(0, 8);
+
+    if (digits.length <= 2) return digits;
+    if (digits.length <= 4) return `${digits.slice(0, 2)}-${digits.slice(2)}`;
+    return `${digits.slice(0, 2)}-${digits.slice(2, 4)}-${digits.slice(4)}`;
+};
+
+const isValidDob = (value: string) => {
+    const match = value.match(/^(\d{2})-(\d{2})-(\d{4})$/);
+    if (!match) return false;
+
+    const day = parseInt(match[1], 10);
+    const month = parseInt(match[2], 10);
+    const year = parseInt(match[3], 10);
+
+    if (month < 1 || month > 12 || day < 1 || year < 1900) return false;
+
+    const date = new Date(year, month - 1, day);
+    return (
+        date.getFullYear() === year &&
+        date.getMonth() === month - 1 &&
+        date.getDate() === day
+    );
+};
+
+const formatDobForApi = (value: string): string => {
+    const match = value.match(/^(\d{2})-(\d{2})-(\d{4})$/);
+    if (!match) return "";
+
+    const [, day, month, year] = match;
+    return `${year}-${month}-${day}`;
+};
+
 export default function AddPets() {
     useAuthGuard();
-    const [startDate, setStartDate] = useState<Date | null>(null);
+    const [dob, setDob] = useState("");
     const [pets, setPets] = useState<PetFromApi[]>([]);
     const [loadingPets, setLoadingPets] = useState(false);
     const [editingPet, setEditingPet] = useState<PetFromApi | null>(null);
@@ -107,12 +140,6 @@ export default function AddPets() {
         { value: "MaleNeutered", label: "Male Neutered" },
         { value: "FemaleSpayed", label: "Female Spayed" },
     ];
-    const petColorOptions = [
-        { value: "1", label: "black" },
-        { value: "2", label: "Brown" },
-        { value: "3", label: "Grey" },
-        { value: "4", label: "Other" },
-    ];
     const petTypeOptions = [
         { value: "1", label: "Dog" },
         { value: "2", label: "Cat" },
@@ -160,6 +187,14 @@ export default function AddPets() {
         }
     };
 
+    const handleDobChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setDob(formatDobInput(e.target.value));
+
+        if (errors.dob) {
+            setErrors({ ...errors, dob: "" });
+        }
+    };
+
     // Helper function to map gender from form to API format
     const mapGenderToApi = (gender: string): string => {
         const genderMap: Record<string, string> = {
@@ -178,22 +213,6 @@ export default function AddPets() {
         return "Male";
     };
 
-    // Helper function to format date as string (YYYY-MM-DD)
-    const formatDateToString = (date: Date | null): string => {
-        if (!date) return "";
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, "0");
-        const day = String(date.getDate()).padStart(2, "0");
-        return `${year}-${month}-${day}`;
-    };
-
-    // Helper function to parse date string to Date
-    const parseDateFromString = (dateString: string): Date | null => {
-        if (!dateString) return null;
-        const date = new Date(dateString);
-        return isNaN(date.getTime()) ? null : date;
-    };
-
     const validateForm = () => {
         for (const field of requiredFields) {
             if (!form[field.key as keyof typeof form]) {
@@ -202,8 +221,15 @@ export default function AddPets() {
             }
         }
 
-        if (!startDate) {
+        if (!dob.trim()) {
             toast.error("Pet birthday is required");
+            setErrors({ ...errors, dob: "Pet birthday is required" });
+            return false;
+        }
+
+        if (!isValidDob(dob)) {
+            toast.error("Enter a valid date in dd-MM-yyyy format");
+            setErrors({ ...errors, dob: "Enter a valid date in dd-MM-yyyy format" });
             return false;
         }
 
@@ -222,7 +248,7 @@ export default function AddPets() {
                 name: form.petName,
                 petTypeId: form.petType || "1",
                 gender: mapGenderToApi(form.petGender),
-                dob: formatDateToString(startDate),
+                dob: formatDobForApi(dob),
                 breed: form.petBreed,
                 weight: form.PetWeight,
                 color: form.petColor || "",
@@ -242,7 +268,7 @@ export default function AddPets() {
                     petColor: "",
                     petType: "",
                 });
-                setStartDate(null);
+                setDob("");
                 setEditingPet(null);
                 setErrors({});
 
@@ -278,7 +304,7 @@ export default function AddPets() {
             petColor: "",
             petType: "",
         });
-        setStartDate(null);
+        setDob("");
         setErrors({});
         setError(null);
     };
@@ -371,17 +397,13 @@ export default function AddPets() {
                         <label className="block text-sm font-medium mb-1">
                             Birthday <span className="text-red-500">*</span>
                         </label>
-                        <DatePicker
-                            selected={startDate}
-                            onChange={(date: Date | null) => {
-                                setStartDate(date);
-                                if (errors.dob) {
-                                    setErrors({ ...errors, dob: "" });
-                                }
-                            }}
-                            placeholderText="Select date"
-                            className="w-full h-11 rounded-lg border px-4"
-                            dateFormat="dd-MM-yyyy"
+                        <Input
+                            type="text"
+                            name="dob"
+                            required
+                            placeholder="dd-MM-yyyy"
+                            value={dob}
+                            onChange={handleDobChange}
                         />
                         {errors.dob && (
                             <p className="text-red-500 text-xs mt-1">{errors.dob}</p>
@@ -421,14 +443,21 @@ export default function AddPets() {
                     </div>
                     <div className="">
                         <label className="block text-sm font-medium mb-1">
-                            Select Pet Color
+                            Select Pet Color <span className="text-red-500">*</span>
                         </label>
-                        <Select
-                            options={petColorOptions}
-                            placeholder="Select Pet Color"
-                            value={form.petColor}
-                            onChange={(value) => handleSelectChange("petColor", value)}
-                        />
+                        <div className="flex items-center gap-3">
+                            <input
+                                type="color"
+                                value={form.petColor || "#000000"}
+                                onChange={(e) => handleSelectChange("petColor", e.target.value)}
+                                className="h-11 w-14 cursor-pointer rounded-lg border border-gray-300 bg-transparent p-1"
+                            />
+                            {form.petColor && (
+                                <span className="text-sm text-gray-600 dark:text-gray-400">
+                                    {form.petColor}
+                                </span>
+                            )}
+                        </div>
                         {errors.color && (
                             <p className="text-red-500 text-xs mt-1">{errors.color}</p>
                         )}

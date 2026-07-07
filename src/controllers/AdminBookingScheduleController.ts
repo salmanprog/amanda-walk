@@ -38,11 +38,30 @@ export default class AdminBookingScheduleController extends RestController<
 
     const booking = await prisma.booking.findUnique({
       where: { id: record.bookingId, deletedAt: null },
-      select: { userId: true, totalPrice: true },
+      select: {
+        userId: true,
+        totalPrice: true,
+        service: { select: { price: true } },
+      },
     });
 
     if (!booking) {
       return record;
+    }
+
+    const scheduleCount = await prisma.bookingSchedule.count({
+      where: { bookingId: record.bookingId, deletedAt: null },
+    });
+
+    const bookingTotal = Number(booking.totalPrice);
+    let bookingAmount =
+      scheduleCount > 0 && bookingTotal > 0
+        ? bookingTotal / scheduleCount
+        : bookingTotal;
+
+    if (!Number.isFinite(bookingAmount) || bookingAmount <= 0) {
+      const servicePrice = Number(booking.service?.price ?? 0);
+      bookingAmount = servicePrice > 0 ? servicePrice : 0;
     }
 
     const transactionController = new AdminTransactionController(this.__request);
@@ -51,7 +70,7 @@ export default class AdminBookingScheduleController extends RestController<
       employeeId: record.employeeId,
       bookingId: record.bookingId,
       bookingScheduleId: record.id,
-      bookingAmount: Number(booking.totalPrice),
+      bookingAmount,
     });
 
     return record;

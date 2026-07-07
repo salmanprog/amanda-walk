@@ -87,17 +87,41 @@ export default class AdminTransactionController extends RestController<
       "userId" | "employeeId" | "bookingId" | "bookingAmount" | "bookingScheduleId"
     >
   ): Promise<ExtendedTransaction> {
+    const userId = Number(payload.userId);
+    const bookingAmount = Number(payload.bookingAmount);
+    const safeAmount =
+      Number.isFinite(bookingAmount) && bookingAmount > 0 ? bookingAmount : 0;
+
     if (payload.bookingScheduleId != null) {
       const existing = await prisma.transaction.findFirst({
         where: { bookingScheduleId: payload.bookingScheduleId },
       });
       if (existing) {
+        if (Number(existing.bookingAmount) === 0 && safeAmount > 0) {
+          await prisma.transaction.update({
+            where: { id: existing.id },
+            data: { bookingAmount: safeAmount },
+          });
+        }
+        await this.syncUserTotalTransaction(userId);
         return existing as unknown as ExtendedTransaction;
       }
     }
 
+    if (safeAmount <= 0) {
+      await this.syncUserTotalTransaction(userId);
+      return {
+        userId,
+        employeeId: Number(payload.employeeId),
+        bookingId: Number(payload.bookingId),
+        bookingAmount: 0,
+        status: TRANSACTION_COMPLETED,
+      } as ExtendedTransaction;
+    }
+
     const data: Partial<ExtendedTransaction> = {
       ...payload,
+      bookingAmount: safeAmount,
       status: TRANSACTION_COMPLETED,
     };
     this.data = data;
@@ -127,26 +151,43 @@ export default class AdminTransactionController extends RestController<
           finalData.bookingScheduleId != null
             ? Number(finalData.bookingScheduleId)
             : null,
-        bookingAmount: finalData.bookingAmount as never,
+        bookingAmount: safeAmount,
         status: (finalData.status as typeof TRANSACTION_COMPLETED) ?? TRANSACTION_COMPLETED,
       },
     });
 
-    await this.syncUserTotalTransaction(Number(finalData.userId));
+    await this.syncUserTotalTransaction(userId);
 
     return created as unknown as ExtendedTransaction;
   }
 
-  /** Set user.total_transaction to sum of transaction.booking_amount for that user. */
-  protected async syncUserTotalTransaction(userId: number): Promise<void> {
+  /** Sync user totals: total from transactions; pay from paid invoices; remaining = total − pay. */
+  async syncUserTotalTransaction(userId: number): Promise<void> {
     const { _sum } = await prisma.transaction.aggregate({
       where: { userId },
       _sum: { bookingAmount: true },
     });
 
+    const payAgg = await prisma.invoice.aggregate({
+      where: { userId, isPaid: true },
+      _sum: { invoiceAmount: true },
+    });
+
+    const totalRaw = _sum.bookingAmount;
+    const payRaw = payAgg._sum.invoiceAmount;
+    const totalTransaction =
+      totalRaw != null ? Number(totalRaw) : 0;
+    const payTransaction =
+      payRaw != null ? Number(payRaw) : 0;
+    const remainingTransaction = totalTransaction - payTransaction;
+
     await prisma.user.update({
       where: { id: userId },
-      data: { totalTransaction: _sum.bookingAmount ?? 0 },
+      data: {
+        totalTransaction,
+        payTransaction,
+        remainingTransaction,
+      },
     });
   }
 }
