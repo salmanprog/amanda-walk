@@ -244,7 +244,7 @@ export default function EditEmployeeBookingPage() {
             </div>
           </div>
           <div className="flex shrink-0 justify-end sm:pt-1">
-            <Button
+            {/* <Button
               type="button"
               variant="secondary"
               size="sm"
@@ -256,7 +256,7 @@ export default function EditEmployeeBookingPage() {
             >
               <MessageCircle className="h-3.5 w-3.5" aria-hidden />
               Chat
-            </Button>
+            </Button> */}
           </div>
         </div>
       </div>

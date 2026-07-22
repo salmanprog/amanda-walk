@@ -373,7 +373,7 @@ export default function BookingListPage() {
                   Booking #{viewBookingDetails.id}
                 </h3>
                 <div className="flex items-center gap-2">
-                  <Button
+                  {/* <Button
                     type="button"
                     variant="secondary"
                     size="sm"
@@ -385,7 +385,7 @@ export default function BookingListPage() {
                   >
                     <MessageCircle className="h-4 w-4" aria-hidden />
                     Chat with employee
-                  </Button>
+                  </Button> */}
                   <button
                     type="button"
                     onClick={() => setViewBookingDetails(null)}

@@ -246,7 +246,13 @@ export const storeInvoice = yup.object({
 
 export const updateUserInvoice = yup.object({
   comments: yup.string().trim().required("Message is required"),
-  attachments: yup.string().trim().required("Image is required"),
+  modeOfPayment: yup
+    .string()
+    .trim()
+    .oneOf(["zelle", "cashapp", "venmo"], "Mode of Payment is required")
+    .required("Mode of Payment is required"),
+  transactionId: yup.string().trim().required("Transaction ID is required"),
+  attachments: yup.string().trim().nullable().notRequired(),
 });
 
 export const updateAdminInvoice = yup.object({

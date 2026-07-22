@@ -8,13 +8,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import useApi, { ApiResponse } from "@/utils/useApi";
+import useApi from "@/utils/useApi";
 import Badge from "@/components/ui/badge/Badge";
 import Button from "@/components/ui/button/Button";
-import Label from "@/components/form/Label";
 import { Modal } from "@/components/ui/modal";
 import { useModal } from "@/hooks/useModal";
-import toast from "react-hot-toast";
 
 interface InvoiceRow {
   id: number;
@@ -22,8 +20,11 @@ interface InvoiceRow {
   userName: string | null;
   userEmail: string | null;
   invoiceDate: string;
+  invoiceAmount: number;
   isPaid: boolean;
   userPaid: number;
+  modeOfPayment: string | null;
+  transactionId: string | null;
   comments: string | null;
   attachments: string | null;
   createdAt: string;
@@ -33,18 +34,11 @@ interface InvoiceRow {
 export default function InvoiceList() {
   const [invoices, setInvoices] = useState<InvoiceRow[]>([]);
   const [selectedInvoice, setSelectedInvoice] = useState<InvoiceRow | null>(null);
-  const [adminPaymentStatus, setAdminPaymentStatus] = useState("false");
   const viewModal = useModal();
 
   const { data, loading, fetchApi } = useApi({
     url: "/api/admin/invoice",
     method: "GET",
-    type: "manual",
-    requiresAuth: true,
-  });
-
-  const { sendData, loading: updating } = useApi({
-    url: selectedInvoice ? `/api/admin/invoice/${selectedInvoice.id}` : "",
     type: "manual",
     requiresAuth: true,
   });
@@ -73,50 +67,23 @@ export default function InvoiceList() {
     });
   };
 
-  const formatDateTime = (dateStr: string) => {
-    if (!dateStr) return "—";
-    const d = new Date(dateStr);
-    return d.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
+  const formatAmount = (value: unknown) => {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return "0.00";
+    return n.toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     });
   };
 
   const handleView = (row: InvoiceRow) => {
     setSelectedInvoice(row);
-    setAdminPaymentStatus(row.isPaid ? "true" : "false");
     viewModal.openModal();
   };
 
   const closeViewModal = () => {
     viewModal.closeModal();
     setSelectedInvoice(null);
-    setAdminPaymentStatus("false");
-  };
-
-  const handleUpdatePaymentStatus = async () => {
-    if (!selectedInvoice) return;
-
-    try {
-      const res = await sendData<ApiResponse>(
-        { isPaid: adminPaymentStatus === "true" },
-        undefined,
-        "PATCH"
-      );
-
-      if (res.code === 200) {
-        toast.success("Admin payment status updated successfully");
-        closeViewModal();
-        void fetchApi();
-      } else {
-        toast.error(res.message || "Failed to update payment status");
-      }
-    } catch {
-      toast.error("Something went wrong. Please try again.");
-    }
   };
 
   return (
@@ -142,12 +109,6 @@ export default function InvoiceList() {
                   isHeader
                   className="py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
                 >
-                  User ID
-                </TableCell>
-                <TableCell
-                  isHeader
-                  className="py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
-                >
                   User Name
                 </TableCell>
                 <TableCell
@@ -161,6 +122,12 @@ export default function InvoiceList() {
                   className="py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
                 >
                   Invoice Date
+                </TableCell>
+                <TableCell
+                  isHeader
+                  className="py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                >
+                  Invoice Amount
                 </TableCell>
                 <TableCell
                   isHeader
@@ -186,7 +153,7 @@ export default function InvoiceList() {
             <TableBody className="divide-y divide-gray-100 dark:divide-gray-800">
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="py-8 text-center text-gray-500">
+                  <TableCell colSpan={9} className="py-8 text-center text-gray-500">
                     Loading invoices...
                   </TableCell>
                 </TableRow>
@@ -197,9 +164,6 @@ export default function InvoiceList() {
                       {row.id}
                     </TableCell>
                     <TableCell className="py-3 text-gray-500 text-theme-sm dark:text-gray-400">
-                      {row.userId}
-                    </TableCell>
-                    <TableCell className="py-3 text-gray-500 text-theme-sm dark:text-gray-400">
                       {row.userName ?? "—"}
                     </TableCell>
                     <TableCell className="py-3 text-gray-500 text-theme-sm dark:text-gray-400">
@@ -207,6 +171,9 @@ export default function InvoiceList() {
                     </TableCell>
                     <TableCell className="py-3 text-gray-500 text-theme-sm dark:text-gray-400">
                       {formatDate(row.invoiceDate)}
+                    </TableCell>
+                    <TableCell className="py-3 text-gray-500 text-theme-sm dark:text-gray-400 tabular-nums">
+                      ${formatAmount(row.invoiceAmount)}
                     </TableCell>
                     <TableCell className="py-3">
                       <Badge size="sm" color={row.isPaid ? "success" : "warning"}>
@@ -227,7 +194,7 @@ export default function InvoiceList() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={8} className="py-8 text-center text-gray-500">
+                  <TableCell colSpan={9} className="py-8 text-center text-gray-500">
                     No invoices found.
                   </TableCell>
                 </TableRow>
@@ -281,25 +248,24 @@ export default function InvoiceList() {
                 </Badge>
               </dd>
             </div>
+            <div>
+              <dt className="text-gray-500 dark:text-gray-400">Mode of Payment</dt>
+              <dd className="font-medium text-gray-900 dark:text-white capitalize">
+                {selectedInvoice.modeOfPayment ?? "—"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-gray-500 dark:text-gray-400">Transaction ID</dt>
+              <dd className="font-medium text-gray-900 dark:text-white break-all">
+                {selectedInvoice.transactionId ?? "—"}
+              </dd>
+            </div>
             <div className="sm:col-span-2">
               <dt className="text-gray-500 dark:text-gray-400">Comments</dt>
               <dd className="font-medium text-gray-900 dark:text-white mt-1 whitespace-pre-wrap">
                 {selectedInvoice.comments?.trim() ? selectedInvoice.comments : "—"}
               </dd>
             </div>
-            {selectedInvoice.userPaid === 1 && !selectedInvoice.isPaid && (
-            <div className="sm:col-span-2">
-              <Label>Admin Payment Status</Label>
-              <select
-                value={adminPaymentStatus}
-                onChange={(e) => setAdminPaymentStatus(e.target.value)}
-                className="mt-2 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:text-white/90"
-              >
-                <option value="false">Unpaid</option>
-                <option value="true">Paid</option>
-              </select>
-            </div>
-            )}
             <div className="sm:col-span-2">
               <dt className="text-gray-500 dark:text-gray-400">Attachment</dt>
               <dd className="mt-2">
@@ -320,11 +286,6 @@ export default function InvoiceList() {
           <Button type="button" variant="outline" onClick={closeViewModal}>
             Close
           </Button>
-          {selectedInvoice?.userPaid === 1 && !selectedInvoice?.isPaid && (
-            <Button type="button" onClick={handleUpdatePaymentStatus} loading={updating}>
-              Update
-            </Button>
-          )}
         </div>
       </Modal>
     </>

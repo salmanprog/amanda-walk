@@ -21,6 +21,8 @@ export default class AdminInvoiceResource extends BaseResource<ExtendedInvoice> 
         record.invoiceAmount != null ? Number(record.invoiceAmount) : 0,
       isPaid: record.isPaid,
       userPaid: record.userPaid,
+      modeOfPayment: record.modeOfPayment ?? null,
+      transactionId: record.transactionId ?? null,
       comments: record.comments ?? null,
       attachments: record.attachments ?? null,
       createdAt: record.createdAt,

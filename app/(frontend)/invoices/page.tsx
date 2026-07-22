@@ -14,12 +14,34 @@ import Badge from "@/components/ui/badge/Badge";
 import Button from "@/components/ui/button/Button";
 import Label from "@/components/form/Label";
 import TextArea from "@/components/form/input/TextArea";
+import Input from "@/components/form/input/InputField";
+import Select from "@/components/form/Select";
 import { Modal } from "@/components/ui/modal";
 import { useModal } from "@/hooks/useModal";
 import useApi, { ApiResponse } from "@/utils/useApi";
 import useAuthGuard from "@/hooks/useAuthGuard";
 import { useCurrentUser } from "@/utils/currentUser";
 import toast from "react-hot-toast";
+
+const PAYMENT_MODES = [
+  {
+    value: "zelle",
+    label: "Zelle",
+    qr: "/images/payment/zelle.png?v=2",
+  },
+  {
+    value: "cashapp",
+    label: "Cash App",
+    qr: "/images/payment/cashapp.png?v=2",
+  },
+  {
+    value: "venmo",
+    label: "Venmo",
+    qr: "/images/payment/venmo.png?v=2",
+  },
+] as const;
+
+type PaymentMode = (typeof PAYMENT_MODES)[number]["value"];
 
 function formatTransactionAmount(value: unknown): string {
   const n = Number(value);
@@ -37,6 +59,8 @@ interface InvoiceRow {
   invoiceAmount: number;
   isPaid: boolean;
   userPaid: number;
+  modeOfPayment: string | null;
+  transactionId: string | null;
   comments: string | null;
   attachments: string | null;
   createdAt: string;
@@ -60,6 +84,8 @@ export default function InvoicesPage() {
   const [invoices, setInvoices] = useState<InvoiceRow[]>([]);
   const [selectedInvoice, setSelectedInvoice] = useState<InvoiceRow | null>(null);
   const [message, setMessage] = useState("");
+  const [modeOfPayment, setModeOfPayment] = useState<PaymentMode | "">("");
+  const [transactionId, setTransactionId] = useState("");
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const paidModal = useModal();
 
@@ -100,6 +126,8 @@ export default function InvoicesPage() {
   const openPaidModal = (row: InvoiceRow) => {
     setSelectedInvoice(row);
     setMessage("");
+    setModeOfPayment("");
+    setTransactionId("");
     setFormErrors({});
     paidModal.openModal();
   };
@@ -108,7 +136,20 @@ export default function InvoicesPage() {
     paidModal.closeModal();
     setSelectedInvoice(null);
     setMessage("");
+    setModeOfPayment("");
+    setTransactionId("");
     setFormErrors({});
+  };
+
+  const handleModeChange = (value: string) => {
+    setModeOfPayment(value as PaymentMode | "");
+    if (formErrors.modeOfPayment) {
+      setFormErrors((prev) => {
+        const next = { ...prev };
+        delete next.modeOfPayment;
+        return next;
+      });
+    }
   };
 
   const handleSubmitPaid = async (e: React.FormEvent) => {
@@ -124,8 +165,11 @@ export default function InvoicesPage() {
     if (!message.trim()) {
       errors.comments = "Message is required";
     }
-    if (!imageFile) {
-      errors.attachments = "Image is required";
+    if (!modeOfPayment) {
+      errors.modeOfPayment = "Mode of Payment is required";
+    }
+    if (!transactionId.trim()) {
+      errors.transactionId = "Transaction ID is required";
     }
 
     if (Object.keys(errors).length > 0) {
@@ -136,7 +180,11 @@ export default function InvoicesPage() {
     try {
       const formData = new FormData();
       formData.append("comments", message.trim());
-      formData.append("image", imageFile!);
+      formData.append("modeOfPayment", modeOfPayment);
+      formData.append("transactionId", transactionId.trim());
+      if (imageFile) {
+        formData.append("image", imageFile);
+      }
 
       const res = await sendData<ApiResponse>(formData, undefined, "PATCH");
 
@@ -237,6 +285,18 @@ export default function InvoicesPage() {
                   isHeader
                   className="py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
                 >
+                  Mode of Payment
+                </TableCell>
+                <TableCell
+                  isHeader
+                  className="py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                >
+                  Transaction ID
+                </TableCell>
+                <TableCell
+                  isHeader
+                  className="py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                >
                   Payment Status
                 </TableCell>
                 <TableCell
@@ -266,6 +326,12 @@ export default function InvoicesPage() {
                     </TableCell>
                     <TableCell className="py-3 text-gray-500 text-theme-sm dark:text-gray-400 tabular-nums">
                       ${formatTransactionAmount(row.invoiceAmount)}
+                    </TableCell>
+                    <TableCell className="py-3 text-gray-500 text-theme-sm dark:text-gray-400">
+                      {row.modeOfPayment}
+                    </TableCell>
+                    <TableCell className="py-3 text-gray-500 text-theme-sm dark:text-gray-400">
+                      {row.transactionId}
                     </TableCell>
                     <TableCell className="py-3">
                       <Badge size="sm" color={row.isPaid ? "success" : "warning"}>
@@ -301,13 +367,90 @@ export default function InvoicesPage() {
         </div>
       </motion.div>
 
-      <Modal isOpen={paidModal.isOpen} onClose={closePaidModal} className="max-w-lg w-full p-6">
+      <Modal isOpen={paidModal.isOpen} onClose={closePaidModal} className="max-w-2xl w-full p-6">
         <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
           Submit Payment
         </h2>
         <form onSubmit={handleSubmitPaid} className="space-y-4">
           <div>
-            <Label>Message</Label>
+            <Label>
+              Mode of Payment <span className="text-error-500">*</span>
+            </Label>
+            <div className="mt-2">
+              <Select
+                options={PAYMENT_MODES.map((mode) => ({
+                  value: mode.value,
+                  label: mode.label,
+                }))}
+                placeholder="Select mode of payment"
+                value={modeOfPayment}
+                onChange={handleModeChange}
+              />
+            </div>
+            {formErrors.modeOfPayment && (
+              <p className="mt-2 text-sm text-error-500">{formErrors.modeOfPayment}</p>
+            )}
+          </div>
+
+          <div>
+            <Label>
+              Scan QR Code <span className="text-error-500">*</span>
+            </Label>
+            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+              {PAYMENT_MODES.map((mode) => {
+                const selected = modeOfPayment === mode.value;
+                return (
+                  <label
+                    key={mode.value}
+                    className={`cursor-pointer rounded-xl border p-3 transition ${
+                      selected
+                        ? "border-[var(--primary-theme)] ring-2 ring-[var(--primary-theme)]/30"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="modeOfPaymentQr"
+                      value={mode.value}
+                      checked={selected}
+                      onChange={() => handleModeChange(mode.value)}
+                      className="sr-only"
+                    />
+                    <img
+                      src={mode.qr}
+                      alt={`${mode.label} QR code`}
+                      className="mx-auto aspect-square h-36 w-36 rounded-lg object-cover object-top bg-white"
+                    />
+                    <p className="mt-2 text-center text-sm font-medium text-gray-800">
+                      {mode.label}
+                    </p>
+                  </label>
+                );
+              })}
+            </div>
+            {formErrors.modeOfPayment && (
+              <p className="mt-2 text-sm text-error-500">{formErrors.modeOfPayment}</p>
+            )}
+          </div>
+
+          <div>
+            <Label>
+              Transaction ID <span className="text-error-500">*</span>
+            </Label>
+            <Input
+              type="text"
+              placeholder="Enter transaction ID"
+              value={transactionId}
+              onChange={(e) => setTransactionId(e.target.value)}
+              error={!!formErrors.transactionId}
+              hint={formErrors.transactionId}
+            />
+          </div>
+
+          <div>
+            <Label>
+              Message <span className="text-error-500">*</span>
+            </Label>
             <TextArea
               placeholder="Enter your message"
               rows={4}
@@ -319,7 +462,7 @@ export default function InvoicesPage() {
           </div>
 
           <div>
-            <Label>Upload Image</Label>
+            <Label>Upload Image (optional)</Label>
             <input
               id="invoice-image"
               type="file"

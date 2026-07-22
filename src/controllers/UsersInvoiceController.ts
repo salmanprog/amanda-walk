@@ -5,6 +5,7 @@ import UsersInvoiceHook from "@/hooks/UsersInvoiceHook";
 import AdminInvoiceResource, {
   type ExtendedInvoice,
 } from "@/resources/AdminInvoiceResource";
+import AdminTransactionController from "@/controllers/AdminTransactionController";
 import { updateUserInvoice } from "@/validators/user.validation";
 
 export default class UsersInvoiceController extends RestController<
@@ -59,6 +60,18 @@ export default class UsersInvoiceController extends RestController<
     }
 
     if (!this.data) this.data = {};
-    Object.assign(this.data, { userPaid: 1 });
+    // userPaid: user submitted payment; isPaid: same admin confirmation previously done from invoices UI
+    Object.assign(this.data, { userPaid: 1, isPaid: true });
+
+    const attachments = (this.data as { attachments?: string | null }).attachments;
+    if (!attachments || !String(attachments).trim()) {
+      delete (this.data as Record<string, unknown>).attachments;
+    }
+  }
+
+  protected async afterUpdate(record: ExtendedInvoice): Promise<ExtendedInvoice> {
+    const transactionController = new AdminTransactionController(this.__request);
+    await transactionController.syncUserTotalTransaction(Number(record.userId));
+    return record;
   }
 }

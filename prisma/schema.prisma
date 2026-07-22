@@ -377,6 +377,8 @@ model Invoice {
   invoiceDate   DateTime @map("invoice_date") @db.Date
   isPaid      Boolean  @default(false) @map("is_paid")
   userPaid    Int      @default(0) @map("user_paid")
+  modeOfPayment String?  @map("mode_of_payment") @db.VarChar(50)
+  transactionId String?  @map("transaction_id") @db.VarChar(255)
   comments    String?  @db.Text
   attachments String?  @db.Text
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamp(6)

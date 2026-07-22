@@ -85,13 +85,11 @@ export async function PATCH(
   try {
     if (contentType.includes("multipart/form-data")) {
       const formData = await request.formData();
-      let hasImage = false;
 
       for (const [key, value] of formData.entries()) {
         if (typeof value === "string") {
           (data as Record<string, string>)[key] = value;
         } else if (value instanceof Blob && key === "image" && value.size > 0) {
-          hasImage = true;
           const file = value as File;
           const fileName = `${Date.now()}-${file.name || "upload.jpg"}`;
           if (!isAllowedUploadFilename(fileName)) {
@@ -107,17 +105,6 @@ export async function PATCH(
           await fs.writeFile(filePath, buffer);
           (data as Record<string, string>).attachments = `/uploads/invoice/${fileName}`;
         }
-      }
-
-      if (!hasImage) {
-        return NextResponse.json(
-          {
-            code: 400,
-            message: "Validation failed",
-            data: { attachments: "Image is required" },
-          },
-          { status: 400 }
-        );
       }
     } else {
       return NextResponse.json(
