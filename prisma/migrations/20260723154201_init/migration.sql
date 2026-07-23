@@ -107,6 +107,8 @@ CREATE TABLE `User` (
     `emailOtp` VARCHAR(100) NULL,
     `emailOtpCreatedAt` DATETIME(3) NULL,
     `total_transaction` DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+    `pay_transaction` DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+    `remaining_transaction` DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
     `createdAt` TIMESTAMP(6) NULL,
     `updatedAt` TIMESTAMP(6) NULL,
     `deletedAt` TIMESTAMP(6) NULL,
@@ -311,6 +313,26 @@ CREATE TABLE `transaction` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
+CREATE TABLE `invoices` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `user_id` INTEGER NOT NULL,
+    `invoice_amount` DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+    `invoice_date` DATE NOT NULL,
+    `is_paid` BOOLEAN NOT NULL DEFAULT false,
+    `user_paid` INTEGER NOT NULL DEFAULT 0,
+    `mode_of_payment` VARCHAR(50) NULL,
+    `transaction_id` VARCHAR(255) NULL,
+    `comments` TEXT NULL,
+    `attachments` TEXT NULL,
+    `created_at` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    `updated_at` DATETIME(3) NOT NULL,
+
+    INDEX `invoices_user_id_idx`(`user_id`),
+    INDEX `invoices_is_paid_idx`(`is_paid`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
 CREATE TABLE `booking_schedules` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `bookingId` INTEGER NOT NULL,
@@ -439,6 +461,9 @@ ALTER TABLE `transaction` ADD CONSTRAINT `transaction_booking_id_fkey` FOREIGN K
 
 -- AddForeignKey
 ALTER TABLE `transaction` ADD CONSTRAINT `transaction_booking_schedule_id_fkey` FOREIGN KEY (`booking_schedule_id`) REFERENCES `booking_schedules`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `invoices` ADD CONSTRAINT `invoices_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `User`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `booking_schedules` ADD CONSTRAINT `booking_schedules_bookingId_fkey` FOREIGN KEY (`bookingId`) REFERENCES `bookings`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;

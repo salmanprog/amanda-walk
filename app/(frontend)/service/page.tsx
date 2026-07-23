@@ -213,6 +213,37 @@ export default function ServicePage() {
     );
   };
 
+  // 1 pet → all categories except id 2; multiple pets → only category id 2
+  const visibleServiceCategories = useMemo(() => {
+    if (selectedPets.length > 1) {
+      return servicesCategories.filter((category) => category.id === 2);
+    }
+    if (selectedPets.length === 1) {
+      return servicesCategories.filter((category) => category.id !== 2);
+    }
+    return servicesCategories;
+  }, [servicesCategories, selectedPets.length]);
+
+  useEffect(() => {
+    if (selectedPets.length > 1) {
+      if (selectedCategory !== 2) {
+        setSelectedCategory(2);
+        setSelectedService(null);
+        setCategoryServices([]);
+      }
+      return;
+    }
+
+    if (
+      selectedCategory != null &&
+      !visibleServiceCategories.some((category) => category.id === selectedCategory)
+    ) {
+      setSelectedCategory(null);
+      setSelectedService(null);
+      setCategoryServices([]);
+    }
+  }, [selectedPets.length, selectedCategory, visibleServiceCategories]);
+
   // Handle time slot selection
   const handleTimeSelect = (time: string) => {
     if (!selectedDate) {
@@ -393,12 +424,12 @@ export default function ServicePage() {
             </div>
           ) : (
             <div className="flex justify-center gap-4">
-              {servicesCategories.length === 0 ? (
+              {visibleServiceCategories.length === 0 ? (
                 <div className="text-center py-4">
                   <p className="text-sm text-gray-500">No service categories available.</p>
                 </div>
               ) : (
-                servicesCategories.map((category) => (
+                visibleServiceCategories.map((category) => (
                   <div key={category.id} className="flex justify-center">
                     <label
                       htmlFor={`service-category-${category.id}`}
