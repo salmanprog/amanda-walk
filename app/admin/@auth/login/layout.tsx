@@ -25,7 +25,7 @@ export default function AuthLayout({
                   <Image
                     width={231}
                     height={48}
-                    src="/images/logo.jpg"
+                    src="/images/logo_new.png"
                     alt="Logo"
                   />
                 </Link>
