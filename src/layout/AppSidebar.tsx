@@ -291,8 +291,8 @@ const AppSidebar: React.FC = () => {
     >
       <div className="p-4">
         {/* Logo */}
-        <div className={`flex items-center space-x-2 mb-6 justify-center ${!isExpanded ? 'justify-center' : ''}`}>
-        <Image src="/images/logo.jpg" className={`${!isExpanded ? 'max-w-[50px]' : 'max-w-[150px]'}`} alt="Logo" width={250} height={250} />
+        <div className={`flex items-center space-x-2 mb-4 justify-center ${!isExpanded ? 'justify-center' : ''}`}>
+        <Image src="/images/logo_new.png" className={`h-auto object-contain ${!isExpanded ? 'max-w-[40px]' : 'max-w-[96px]'}`} alt="Logo" width={96} height={96} />
         </div>
 
         {/* Navigation */}
