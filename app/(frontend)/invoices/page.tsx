@@ -18,6 +18,7 @@ import Input from "@/components/form/input/InputField";
 import Select from "@/components/form/Select";
 import { Modal } from "@/components/ui/modal";
 import { useModal } from "@/hooks/useModal";
+import StripeCardModal from "@/components/payments/StripeCardModal";
 import useApi, { ApiResponse } from "@/utils/useApi";
 import useAuthGuard from "@/hooks/useAuthGuard";
 import { useCurrentUser } from "@/utils/currentUser";
@@ -27,21 +28,25 @@ const PAYMENT_MODES = [
   {
     value: "zelle",
     label: "Zelle",
+    feeLabel: "Processing Fee 0%",
     qr: "/images/payment/zelle.png?v=2",
   },
   {
     value: "cashapp",
     label: "Cash App",
+    feeLabel: "Processing Fee 0%",
     qr: "/images/payment/cashapp.png?v=2",
   },
   {
     value: "venmo",
     label: "Venmo",
+    feeLabel: "Processing Fee 0%",
     qr: "/images/payment/venmo.png?v=2",
   },
   {
     value: "stripe",
-    label: "Stripe",
+    label: "Pay with Card",
+    feeLabel: "Processing Fee 3%",
     qr: "/images/payment/stripe.svg",
   },
 ] as const;
@@ -92,6 +97,7 @@ export default function InvoicesPage() {
   const [modeOfPayment, setModeOfPayment] = useState<PaymentMode | "">("");
   const [transactionId, setTransactionId] = useState("");
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [stripeModalOpen, setStripeModalOpen] = useState(false);
   const paidModal = useModal();
 
   const { data, loading, fetchApi } = useApi({
@@ -134,11 +140,13 @@ export default function InvoicesPage() {
     setModeOfPayment("");
     setTransactionId("");
     setFormErrors({});
+    setStripeModalOpen(false);
     paidModal.openModal();
   };
 
   const closePaidModal = () => {
     paidModal.closeModal();
+    setStripeModalOpen(false);
     setSelectedInvoice(null);
     setMessage("");
     setModeOfPayment("");
@@ -147,11 +155,36 @@ export default function InvoicesPage() {
   };
 
   const handleModeChange = (value: string) => {
-    setModeOfPayment(value as PaymentMode | "");
+    const nextMode = value as PaymentMode | "";
+    setModeOfPayment(nextMode);
+
+    if (nextMode !== "stripe") {
+      setStripeModalOpen(false);
+    } else if (selectedInvoice) {
+      setStripeModalOpen(true);
+    }
+
+    if (nextMode === "stripe") {
+      setTransactionId("");
+    }
+
     if (formErrors.modeOfPayment) {
       setFormErrors((prev) => {
         const next = { ...prev };
         delete next.modeOfPayment;
+        return next;
+      });
+    }
+  };
+
+  const handleStripeSuccess = (paymentIntentId: string) => {
+    setTransactionId(paymentIntentId);
+    setModeOfPayment("stripe");
+    setStripeModalOpen(false);
+    if (formErrors.transactionId) {
+      setFormErrors((prev) => {
+        const next = { ...prev };
+        delete next.transactionId;
         return next;
       });
     }
@@ -429,6 +462,9 @@ export default function InvoicesPage() {
                     <p className="mt-1.5 text-center text-xs font-medium text-gray-800">
                       {mode.label}
                     </p>
+                    <p className="mt-0.5 text-center text-[10px] leading-tight text-gray-500">
+                      {mode.feeLabel}
+                    </p>
                   </label>
                 );
               })}
@@ -444,12 +480,29 @@ export default function InvoicesPage() {
             </Label>
             <Input
               type="text"
-              placeholder="Enter transaction ID"
+              placeholder={
+                modeOfPayment === "stripe"
+                  ? "Will fill after successful Stripe payment"
+                  : "Enter transaction ID"
+              }
               value={transactionId}
               onChange={(e) => setTransactionId(e.target.value)}
+              disabled={modeOfPayment === "stripe" && !!transactionId}
               error={!!formErrors.transactionId}
               hint={formErrors.transactionId}
             />
+            {modeOfPayment === "stripe" && !transactionId && (
+              <p className="mt-2 text-sm text-gray-500">
+                Complete card payment to auto-fill Transaction ID.{" "}
+                <button
+                  type="button"
+                  className="font-medium text-[var(--primary-theme)] underline"
+                  onClick={() => selectedInvoice && setStripeModalOpen(true)}
+                >
+                  Open card payment
+                </button>
+              </p>
+            )}
           </div>
 
           <div>
@@ -489,6 +542,16 @@ export default function InvoicesPage() {
           </div>
         </form>
       </Modal>
+
+      {selectedInvoice && (
+        <StripeCardModal
+          isOpen={stripeModalOpen}
+          onClose={() => setStripeModalOpen(false)}
+          invoiceId={selectedInvoice.id}
+          amount={Number(selectedInvoice.invoiceAmount)}
+          onSuccess={handleStripeSuccess}
+        />
+      )}
     </>
   );
 }
