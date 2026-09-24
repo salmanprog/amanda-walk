@@ -39,6 +39,11 @@ const PAYMENT_MODES = [
     label: "Venmo",
     qr: "/images/payment/venmo.png?v=2",
   },
+  {
+    value: "stripe",
+    label: "Stripe",
+    qr: "/images/payment/stripe.svg",
+  },
 ] as const;
 
 type PaymentMode = (typeof PAYMENT_MODES)[number]["value"];
@@ -396,13 +401,13 @@ export default function InvoicesPage() {
             <Label>
               Scan QR Code <span className="text-error-500">*</span>
             </Label>
-            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="mt-3 grid grid-cols-4 gap-2">
               {PAYMENT_MODES.map((mode) => {
                 const selected = modeOfPayment === mode.value;
                 return (
                   <label
                     key={mode.value}
-                    className={`cursor-pointer rounded-xl border p-3 transition ${
+                    className={`cursor-pointer rounded-xl border p-2 transition ${
                       selected
                         ? "border-[var(--primary-theme)] ring-2 ring-[var(--primary-theme)]/30"
                         : "border-gray-200 hover:border-gray-300"
@@ -419,9 +424,9 @@ export default function InvoicesPage() {
                     <img
                       src={mode.qr}
                       alt={`${mode.label} QR code`}
-                      className="mx-auto aspect-square h-36 w-36 rounded-lg object-cover object-top bg-white"
+                      className="mx-auto aspect-square h-20 w-20 rounded-lg object-cover object-top bg-white"
                     />
-                    <p className="mt-2 text-center text-sm font-medium text-gray-800">
+                    <p className="mt-1.5 text-center text-xs font-medium text-gray-800">
                       {mode.label}
                     </p>
                   </label>

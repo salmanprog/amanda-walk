@@ -249,7 +249,7 @@ export const updateUserInvoice = yup.object({
   modeOfPayment: yup
     .string()
     .trim()
-    .oneOf(["zelle", "cashapp", "venmo"], "Mode of Payment is required")
+    .oneOf(["zelle", "cashapp", "venmo", "stripe"], "Mode of Payment is required")
     .required("Mode of Payment is required"),
   transactionId: yup.string().trim().required("Transaction ID is required"),
   attachments: yup.string().trim().nullable().notRequired(),
