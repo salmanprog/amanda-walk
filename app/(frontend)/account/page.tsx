@@ -428,10 +428,10 @@ export default function AccountPage() {
         <div className="container">
           <div className="max-w-4xl mx-auto">
             {/* Tabs */}
-            <div className="flex gap-4 mb-8 border-b border-gray-200">
+            <div className="flex gap-2 sm:gap-4 mb-6 sm:mb-8 border-b border-gray-200 overflow-x-auto">
               <button
                 onClick={() => setActiveTab("profile")}
-                className={`px-6 py-3 font-semibold transition-colors ${
+                className={`px-3 sm:px-6 py-3 text-sm sm:text-base font-semibold transition-colors whitespace-nowrap shrink-0 ${
                   activeTab === "profile"
                     ? "text-[var(--primary-theme)] border-b-2 border-[var(--primary-theme)]"
                     : "text-gray-600 hover:text-gray-900"
@@ -441,7 +441,7 @@ export default function AccountPage() {
               </button>
               <button
                 onClick={() => setActiveTab("password")}
-                className={`px-6 py-3 font-semibold transition-colors ${
+                className={`px-3 sm:px-6 py-3 text-sm sm:text-base font-semibold transition-colors whitespace-nowrap shrink-0 ${
                   activeTab === "password"
                     ? "text-[var(--primary-theme)] border-b-2 border-[var(--primary-theme)]"
                     : "text-gray-600 hover:text-gray-900"
@@ -475,7 +475,7 @@ export default function AccountPage() {
 
             {/* Profile Tab */}
             {activeTab === "profile" && (
-              <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-200">
+              <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-8 border border-gray-200">
                 {!isEditing ? (
                   <div>
                     <div className="flex items-center justify-between mb-6">
@@ -648,7 +648,7 @@ export default function AccountPage() {
 
             {/* Booking Tab */}
             {activeTab === "booking" && (
-              <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-200">
+              <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-8 border border-gray-200">
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">My Bookings</h2>
                 <div className="max-w-full overflow-x-auto">
                   {loadingBookings ? (
@@ -941,7 +941,7 @@ export default function AccountPage() {
 
             {/* Password Tab */}
             {activeTab === "password" && (
-              <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-200">
+              <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-8 border border-gray-200">
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">Change Password</h2>
                 <form onSubmit={handlePasswordSubmit} className="space-y-6 max-w-md">
                   <div>

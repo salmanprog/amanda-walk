@@ -232,7 +232,7 @@ export default function StripeCardModal({
   );
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} className="max-w-md w-full p-6">
+    <Modal isOpen={isOpen} onClose={onClose} className="max-w-md w-[calc(100%-1.5rem)] sm:w-full p-4 sm:p-6">
       <h2 className="mb-4 text-xl font-semibold text-gray-800 dark:text-white">
         Card Payment
       </h2>

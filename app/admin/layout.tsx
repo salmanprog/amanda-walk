@@ -28,14 +28,14 @@ export default function AdminLayout({
 
   return (
     <UserProvider>
-    <div className="min-h-screen xl:flex">
+    <div className="min-h-screen xl:flex overflow-x-hidden">
       <AppSidebar />
       <Backdrop />
       <div
-        className={`flex-1 transition-all duration-300 ease-in-out ${mainContentMargin}`}
+        className={`flex-1 min-w-0 transition-all duration-300 ease-in-out ${mainContentMargin}`}
       >
         <AppHeader />
-        <div className="p-4 mx-auto  md:p-6">{children}</div>
+        <div className="p-3 mx-auto sm:p-4 md:p-6 max-w-full overflow-x-auto">{children}</div>
       </div>
     </div>
     </UserProvider>

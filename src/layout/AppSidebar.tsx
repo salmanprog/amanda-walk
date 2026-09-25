@@ -179,6 +179,7 @@ const paymentReportItems: NavItem[] = [
 
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, toggleSidebar, toggleMobileSidebar } = useSidebar();
+  const showLabels = isExpanded || isMobileOpen;
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const { data, fetchApi } = useApi({
     url: "/api/getmenu",
@@ -231,13 +232,13 @@ const AppSidebar: React.FC = () => {
             <div>
               <button
                 onClick={() => toggleMenu(nav.name)}
-                className={`flex items-center justify-between w-full px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-white rounded-lg ${!isExpanded ? 'justify-center' : ''}`}
+                className={`flex items-center justify-between w-full px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-white rounded-lg ${!showLabels ? 'justify-center' : ''}`}
               >
-                <span className={`flex items-center space-x-2 ${!isExpanded ? 'space-x-0' : ''}`}>
+                <span className={`flex items-center space-x-2 ${!showLabels ? 'space-x-0' : ''}`}>
                   <nav.icon className="w-5 h-5 text-gray-600 dark:text-gray-300 shrink-0" />
-                  {isExpanded && <span>{nav.name}</span>}
+                  {showLabels && <span>{nav.name}</span>}
                 </span>
-                {isExpanded && (
+                {showLabels && (
                   openMenu === nav.name ? (
                     <ChevronUp className="w-4 h-4" />
                   ) : (
@@ -246,12 +247,13 @@ const AppSidebar: React.FC = () => {
                 )}
               </button>
 
-              {openMenu === nav.name && isExpanded && (
+              {openMenu === nav.name && showLabels && (
                 <ul className="pl-8 mt-2 space-y-1">
                   {nav.subItems.map((sub) => (
                     <li key={sub.name}>
                       <Link
                         href={sub.path}
+                        onClick={handleCloseMobile}
                         className="block px-3 py-1 text-sm text-gray-600 hover:text-black dark:text-gray-400 dark:hover:text-white"
                       >
                         {sub.name}
@@ -264,11 +266,12 @@ const AppSidebar: React.FC = () => {
           ) : (
             <Link
               href={nav.path ?? '#'}
-              className={`flex items-center space-x-2 px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-white rounded-lg ${!isExpanded ? 'justify-center' : ''}`}
-              title={!isExpanded ? nav.name : undefined}
+              onClick={handleCloseMobile}
+              className={`flex items-center space-x-2 px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-white rounded-lg ${!showLabels ? 'justify-center' : ''}`}
+              title={!showLabels ? nav.name : undefined}
             >
               <nav.icon className="w-5 h-5 text-gray-600 dark:text-gray-300 shrink-0" />
-              {isExpanded && <span>{nav.name}</span>}
+              {showLabels && <span>{nav.name}</span>}
             </Link>
           )}
         </li>
@@ -279,25 +282,20 @@ const AppSidebar: React.FC = () => {
   return (
     <aside
       className={`${
-        // Mobile: show/hide based on isMobileOpen
         isMobileOpen ? 'translate-x-0' : '-translate-x-full'
-      } ${
-        // Desktop: always visible
-        'lg:translate-x-0'
-      } ${
-        // Desktop: width based on isExpanded
+      } lg:translate-x-0 w-64 ${
         isExpanded ? 'lg:w-64' : 'lg:w-20'
       } fixed top-0 left-0 h-full bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 transform transition-all duration-300 z-50`}
     >
       <div className="p-4">
         {/* Logo */}
-        <div className={`flex items-center space-x-2 mb-4 justify-center ${!isExpanded ? 'justify-center' : ''}`}>
-        <Image src="/images/logo_new.png" className={`h-auto object-contain ${!isExpanded ? 'max-w-[40px]' : 'max-w-[96px]'}`} alt="Logo" width={96} height={96} />
+        <div className="flex items-center space-x-2 mb-4 justify-center">
+        <Image src="/images/logo_new.png" className={`h-auto object-contain ${!showLabels ? 'max-w-[40px]' : 'max-w-[96px]'}`} alt="Logo" width={96} height={96} />
         </div>
 
         {/* Navigation */}
         <div className='overflow-y-auto max-h-[calc(100vh-140px)]'>
-          {isExpanded && (
+          {showLabels && (
             <h3 className="text-gray-500 text-sm uppercase mb-2">MAIN</h3>
           )}
           {renderMenuItems(menus)}

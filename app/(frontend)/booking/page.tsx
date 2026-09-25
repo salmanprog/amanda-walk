@@ -222,17 +222,17 @@ export default function BookingListPage() {
     <motion.div
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="glass-effect rounded-2xl shadow-2xl p-6 mb-6"
+      className="glass-effect rounded-2xl shadow-2xl p-4 sm:p-6 mb-6"
     >
-      <div className="flex flex-col items-center mb-8">
-        <div className="w-16 h-16 bg-[var(--primary-theme)] rounded-full flex items-center justify-center mb-4 shadow-lg">
+      <div className="flex flex-col items-center mb-6 sm:mb-8">
+        <div className="w-14 h-14 sm:w-16 sm:h-16 bg-[var(--primary-theme)] rounded-full flex items-center justify-center mb-4 shadow-lg">
           <CalendarCheck className="text-white" size={32} />
         </div>
-        <h1 className="text-3xl font-bold gradient-text text-center">My Bookings</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold gradient-text text-center">My Bookings</h1>
         <p className="text-sm text-gray-500 mt-2 text-center">Your scheduled services</p>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8 border border-gray-200 max-w-full overflow-x-auto">
+      <div className="bg-white rounded-2xl shadow-lg p-3 sm:p-6 md:p-8 border border-gray-200 max-w-full overflow-x-auto">
         {loadingBookings ? (
           <p className="text-gray-500 py-4">Loading bookings...</p>
         ) : bookings.length === 0 ? (

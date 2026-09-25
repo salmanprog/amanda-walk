@@ -82,10 +82,10 @@ export default function PetsList() {
         <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="glass-effect rounded-2xl shadow-2xl p-6 mb-6 relative"
+            className="glass-effect rounded-2xl shadow-2xl p-4 sm:p-6 mb-6 relative"
         >
             {/* Add Pet Button */}
-            <div className="absolute top-4 right-4 md:top-6 md:right-6">
+            <div className="flex justify-end mb-3 sm:mb-0 sm:absolute sm:top-4 sm:right-4 md:top-6 md:right-6">
                 <Button
                     onClick={() => router.push("/pets/add")}
                     variant="secondary"
@@ -97,11 +97,11 @@ export default function PetsList() {
             </div>
 
             {/* Header */}
-            <div className="flex flex-col items-center mb-10">
-                <div className="w-16 h-16 bg-[var(--primary-theme)] rounded-full flex items-center justify-center mb-4 shadow-lg">
+            <div className="flex flex-col items-center mb-6 sm:mb-10">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 bg-[var(--primary-theme)] rounded-full flex items-center justify-center mb-4 shadow-lg">
                     <PawPrint className="text-white" size={32} />
                 </div>
-                <h1 className="text-3xl font-bold gradient-text text-center">
+                <h1 className="text-2xl sm:text-3xl font-bold gradient-text text-center">
                     Pets List
                 </h1>
             </div>

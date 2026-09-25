@@ -246,13 +246,13 @@ export default function InvoicesPage() {
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="glass-effect rounded-2xl shadow-2xl p-6 mb-6"
+        className="glass-effect rounded-2xl shadow-2xl p-4 sm:p-6 mb-6"
       >
-        <div className="flex flex-col items-center mb-8">
-          <div className="w-16 h-16 bg-[var(--primary-theme)] rounded-full flex items-center justify-center mb-4 shadow-lg">
+        <div className="flex flex-col items-center mb-6 sm:mb-8">
+          <div className="w-14 h-14 sm:w-16 sm:h-16 bg-[var(--primary-theme)] rounded-full flex items-center justify-center mb-4 shadow-lg">
             <CreditCard className="text-white" size={32} />
           </div>
-          <h1 className="text-3xl font-bold gradient-text text-center">My Invoices</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold gradient-text text-center">My Invoices</h1>
           <p className="text-sm text-gray-500 mt-2 text-center">Your invoice history</p>
         </div>
 
@@ -297,7 +297,7 @@ export default function InvoicesPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8 border border-gray-200 max-w-full overflow-x-auto">
+        <div className="bg-white rounded-2xl shadow-lg p-3 sm:p-6 md:p-8 border border-gray-200 max-w-full overflow-x-auto -mx-1">
           <Table>
             <TableHeader className="border-gray-100 dark:border-gray-800 border-y">
               <TableRow>
@@ -405,7 +405,7 @@ export default function InvoicesPage() {
         </div>
       </motion.div>
 
-      <Modal isOpen={paidModal.isOpen} onClose={closePaidModal} className="max-w-2xl w-full p-6">
+      <Modal isOpen={paidModal.isOpen} onClose={closePaidModal} className="max-w-2xl w-[calc(100%-1.5rem)] sm:w-full p-4 sm:p-6 mx-3 sm:mx-0">
         <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
           Submit Payment
         </h2>
@@ -434,7 +434,7 @@ export default function InvoicesPage() {
             <Label>
               Scan QR Code <span className="text-error-500">*</span>
             </Label>
-            <div className="mt-3 grid grid-cols-4 gap-2">
+            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
               {PAYMENT_MODES.map((mode) => {
                 const selected = modeOfPayment === mode.value;
                 return (
@@ -457,12 +457,12 @@ export default function InvoicesPage() {
                     <img
                       src={mode.qr}
                       alt={`${mode.label} QR code`}
-                      className="mx-auto aspect-square h-20 w-20 rounded-lg object-cover object-top bg-white"
+                      className="mx-auto aspect-square h-16 w-16 sm:h-20 sm:w-20 rounded-lg object-cover object-top bg-white"
                     />
-                    <p className="mt-1.5 text-center text-xs font-medium text-gray-800">
+                    <p className="mt-1.5 text-center text-[11px] sm:text-xs font-medium text-gray-800 leading-tight">
                       {mode.label}
                     </p>
-                    <p className="mt-0.5 text-center text-[10px] leading-tight text-gray-500">
+                    <p className="mt-0.5 text-center text-[9px] sm:text-[10px] leading-tight text-gray-500">
                       {mode.feeLabel}
                     </p>
                   </label>
